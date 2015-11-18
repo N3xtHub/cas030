@@ -8,11 +8,13 @@ public class DatabaseDescriptor
     private static int storagePort_ = 7000;
     private static int controlPort_ = 7001;
     private static int httpPort_ = 7002;
+
     private static int thriftPort_ = 9160;
     private static String listenAddress_; // leave null so we can fall through to getLocalHost
     private static String clusterName_ = "Test";
     private static int replicationFactor_ = 3;
     private static long rpcTimeoutInMillis_ = 2000;
+    
     private static Set<String> seeds_ = new HashSet<String>();
     private static String metadataDirectory_;
     private static String snapshotDirectory_;
@@ -20,12 +22,14 @@ public class DatabaseDescriptor
     private static String[] gangliaServers_ ;
     /* Keeps the list of data file directories */
     private static String[] dataFileDirectories_;
+    
     /* Current index into the above list of directories */
     private static int currentIndex_ = 0;
     private static String logFileDirectory_;
     private static String bootstrapFileDirectory_;
     private static int logRotationThreshold_ = 128*1024*1024;
     private static boolean fastSync_ = false;
+    
     private static boolean rackAware_ = false;
     private static int threadsPerPool_ = 4;
     private static List<String> tables_ = new ArrayList<String>();
@@ -57,6 +61,7 @@ public class DatabaseDescriptor
     private static int memtableSize_ = 128;
     /* Number of objects in millions in the memtable before it is dumped */
     private static double memtableObjectCount_ = 1;
+    
     /* 
      * This parameter enables or disables consistency checks. 
      * If set to false the read repairs are disable for very
@@ -71,11 +76,11 @@ public class DatabaseDescriptor
     private static String jobJarFileLocation_;
     /* Address where to run the job tracker */
     private static String jobTrackerHost_;    
+    
     /* Zookeeper session timeout. */
     private static int zkSessionTimeout_ = 30000;
     /* time to wait before garbage collecting tombstones (deletion markers) */
     private static int gcGraceInSeconds_ = 10 * 24 * 3600; // 10 days
-
     // the path qualified config file (storage-conf.xml) name
     private static String configFileName_;
     
@@ -108,9 +113,7 @@ public class DatabaseDescriptor
             /* Job Jar file location */
             jobJarFileLocation_ = xmlUtils.getNodeValue("/Storage/JobJarFileLocation");
 
-            String gcGrace = xmlUtils.getNodeValue("/Storage/GCGraceSeconds");
-            if ( gcGrace != null )
-                gcGraceInSeconds_ = Integer.parseInt(gcGrace);
+            gcGraceInSeconds_ = xmlUtils.getNodeValue("/Storage/GCGraceSeconds");
 
             /* Zookeeper's session timeout */
             String zkSessionTimeout = xmlUtils.getNodeValue("/Storage/ZookeeperSessionTimeout");
@@ -118,14 +121,12 @@ public class DatabaseDescriptor
                 zkSessionTimeout_ = Integer.parseInt(zkSessionTimeout);
 
             /* Data replication factor */
-            String replicationFactor = xmlUtils.getNodeValue("/Storage/ReplicationFactor");
-            if ( replicationFactor != null )
-                replicationFactor_ = Integer.parseInt(replicationFactor);
+            String replicationFactor = xmlUtils.getNodeValue("/Storage/ReplicationFactor")
+            replicationFactor_ = Integer.parseInt(replicationFactor);
 
             /* RPC Timeout */
             String rpcTimeoutInMillis = xmlUtils.getNodeValue("/Storage/RpcTimeoutInMillis");
-            if ( rpcTimeoutInMillis != null )
-                rpcTimeoutInMillis_ = Integer.parseInt(rpcTimeoutInMillis);
+            rpcTimeoutInMillis_ = Integer.parseInt(rpcTimeoutInMillis);
 
             /* Thread per pool */
             String threadsPerPool = xmlUtils.getNodeValue("/Storage/ThreadsPerPool");
@@ -384,7 +385,7 @@ public class DatabaseDescriptor
      * the table name and the column families that make up the table.
      * Each column family also has an associated ID which is an int.
     */
-    private static void storeMetadata() throws IOException
+    private static void storeMetadata()
     {
         AtomicInteger idGenerator = new AtomicInteger(0);
         Set<String> tables = tableToCFMetaDataMap_.keySet();
@@ -420,36 +421,12 @@ public class DatabaseDescriptor
         }
     }
 
-    public static int getGcGraceInSeconds()
-    {
-        return gcGraceInSeconds_;
-    }
-
-    public static String getPartitionerClass()
-    {
-        return partitionerClass_;
-    }
-    
-    public static String getZkAddress()
-    {
-        return zkAddress_;
-    }
-    
-    public static String getCalloutLocation()
-    {
-        return calloutLocation_;
-    }
     
     public static String getJobTrackerAddress()
     {
         return jobTrackerHost_;
     }
     
-    public static int getZkSessionTimeout()
-    {
-        return zkSessionTimeout_;
-    }
-
     public static int getColumnIndexSize()
     {
     	return columnIndexSizeInKB_ * 1024;
@@ -545,70 +522,17 @@ public class DatabaseDescriptor
     }
     
 
-    public static List<String> getTables()
-    {
-        return tables_;
-    }
-
     public static void  setTables(String table)
     {
         tables_.add(table);
     }
 
-    public static int getStoragePort()
-    {
-        return storagePort_;
-    }
-
-    public static int getControlPort()
-    {
-        return controlPort_;
-    }
-
-    public static int getHttpPort()
-    {
-        return httpPort_;
-    }
-
-    public static int getThriftPort()
-    {
-        return thriftPort_;
-    }
-
-    public static int getReplicationFactor()
-    {
-        return replicationFactor_;
-    }
 
     public static long getRpcTimeout()
     {
         return rpcTimeoutInMillis_;
     }
 
-    public static int getThreadsPerPool()
-    {
-        return threadsPerPool_;
-    }
-
-    public static String getMetadataDirectory()
-    {
-        return metadataDirectory_;
-    }
-
-    public static void setMetadataDirectory(String metadataDirectory)
-    {
-        metadataDirectory_ = metadataDirectory;
-    }
-
-    public static String getSnapshotDirectory()
-    {
-        return snapshotDirectory_;
-    }
-
-    public static void setSnapshotDirectory(String snapshotDirectory)
-    {
-    	snapshotDirectory_ = snapshotDirectory;
-    }
 
     public static String[] getAllDataFileLocations()
     {
@@ -653,20 +577,6 @@ public class DatabaseDescriptor
         logFileDirectory_ = logLocation;
     }
 
-    public static boolean isFastSync()
-    {
-        return fastSync_;
-    }
-
-    public static boolean isRackAware()
-    {
-        return rackAware_;
-    }
-
-    public static Set<String> getSeeds()
-    {
-        return seeds_;
-    }
 
     public static String getColumnFamilyType(String cfName)
     {
@@ -735,10 +645,5 @@ public class DatabaseDescriptor
         {
             super(message);
         }
-    }
-
-    public static String getListenAddress()
-    {
-        return listenAddress_;
     }
 }

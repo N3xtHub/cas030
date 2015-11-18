@@ -17,25 +17,22 @@ public final class StreamManager
             DataInputBuffer bufIn = new DataInputBuffer();
             bufIn.reset(body, body.length);
 
-            try
+            StreamContextManager.StreamStatusMessage streamStatusMessage = StreamContextManager.StreamStatusMessage.serializer().deserialize(bufIn);
+            StreamContextManager.StreamStatus streamStatus = streamStatusMessage.getStreamStatus();
+                                           
+            switch( streamStatus.getAction() )
             {
-                StreamContextManager.StreamStatusMessage streamStatusMessage = StreamContextManager.StreamStatusMessage.serializer().deserialize(bufIn);
-                StreamContextManager.StreamStatus streamStatus = streamStatusMessage.getStreamStatus();
-                                               
-                switch( streamStatus.getAction() )
-                {
-                    case DELETE:                              
-                        StreamManager.instance(message.getFrom()).finish(streamStatus.getFile());
-                        break;
+                case DELETE:                              
+                    StreamManager.instance(message.getFrom()).finish(streamStatus.getFile());
+                    break;
 
-                    case STREAM:
-                        logger_.debug("Need to re-stream file " + streamStatus.getFile());
-                        StreamManager.instance(message.getFrom()).repeat();
-                        break;
+                case STREAM:
+                    logger_.debug("Need to re-stream file " + streamStatus.getFile());
+                    StreamManager.instance(message.getFrom()).repeat();
+                    break;
 
-                    default:
-                        break;
-                }
+                default:
+                    break;
             }
         }
     }
@@ -66,7 +63,6 @@ public final class StreamManager
     {
         for ( StreamContextManager.StreamContext streamContext : streamContexts )
         {
-            logger_.debug("Adding file " + streamContext.getTargetFile() + " to be streamed.");
             filesToStream_.add( new File( streamContext.getTargetFile() ) );
             totalBytesToStream_ += streamContext.getExpectedBytes();
         }
@@ -77,8 +73,8 @@ public final class StreamManager
         if ( filesToStream_.size() > 0 )
         {
             File file = filesToStream_.get(0);
-            logger_.debug("Streaming file " + file + " ...");
-            MessagingService.getMessagingInstance().stream(file.getAbsolutePath(), 0L, file.length(), StorageService.getLocalStorageEndPoint(), to_);
+            MessagingService.getMessagingInstance().stream(
+                file.getAbsolutePath(), 0L, file.length(), StorageService.getLocalStorageEndPoint(), to_);
         }
     }
     
@@ -88,19 +84,18 @@ public final class StreamManager
             start();
     }
     
-    void finish(String file) throws IOException
+    void finish(String file)
     {
         File f = new File(file);
-        logger_.debug("Deleting file " + file + " after streaming " + f.length() + "/" + totalBytesToStream_ + " bytes.");
         FileUtils.delete(file);
         filesToStream_.remove(0);
+
         if ( filesToStream_.size() > 0 )
             start();
         else
         {
             synchronized(this)
             {
-                logger_.debug("Signalling that streaming is done for " + to_);
                 notifyAll();
             }
         }
@@ -108,6 +103,6 @@ public final class StreamManager
     
     public synchronized void waitForStreamCompletion()
     {
-            wait();
+        wait();
     }
 }

@@ -7,26 +7,16 @@
  * <a href="http://commons.apache.org/daemon/jsvc.html">Commons Daemon</a>
  * documentation).
  * 
- * 
  */
 
 public class CassandraDaemon
 {
-    private static Logger logger = Logger.getLogger(CassandraDaemon.class);
     private TThreadPoolServer serverEngine;
 
     private void setup()
     {
         int listenPort = DatabaseDescriptor.getThriftPort();
-        
-        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler()
-        {
-            public void uncaughtException(Thread t, Throwable e)
-            {
-                logger.error("Fatal exception in thread " + t, e);
-            }
-        });
-        
+               
         CassandraServer peerStorageServer = new CassandraServer();
         peerStorageServer.start();
         Cassandra.Processor processor = new Cassandra.Processor(peerStorageServer);
@@ -45,8 +35,7 @@ public class CassandraDaemon
                                              options);
     }
 
-    /** hook for JSVC */
-    public void init(String[] args) throws IOException, TTransportException
+    public void init(String[] args)
     {  
         setup();
     }

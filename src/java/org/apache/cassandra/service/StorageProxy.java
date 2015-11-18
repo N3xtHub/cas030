@@ -8,10 +8,11 @@ public class StorageProxy implements StorageProxyMBean
     private static TimedStatsDeque rangeStats = new TimedStatsDeque(60000);
     private static TimedStatsDeque writeStats = new TimedStatsDeque(60000);
     private StorageProxy() {}
+    
     static
     {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        mbs.registerMBean(new StorageProxy(), new ObjectName("org.apache.cassandra.service:type=StorageProxy"));
+        mbs.registerMBean(new StorageProxy(), new ObjectName("service:type=StorageProxy"));
     }
 
     /**
@@ -19,7 +20,7 @@ public class StorageProxy implements StorageProxyMBean
      * sent over the wire to N replicas where some of the replicas
      * may be hints.
      */
-    private static Map<EndPoint, Message> createWriteMessages(RowMutation rm, Map<EndPoint, EndPoint> endpointMap) throws IOException
+    private static Map<EndPoint, Message> createWriteMessages(RowMutation rm, Map<EndPoint, EndPoint> endpointMap) 
     {
 		Map<EndPoint, Message> messageMap = new HashMap<EndPoint, Message>();
 		Message message = rm.makeRowMutationMessage();
@@ -32,7 +33,6 @@ public class StorageProxy implements StorageProxyMBean
 			{
 				Message hintedMessage = rm.makeRowMutationMessage();
 				hintedMessage.addHeader(RowMutation.HINT, EndPoint.toBytes(hint) );
-				logger.debug("Sending the hint of " + target.getHost() + " to " + hint.getHost());
 				messageMap.put(target, hintedMessage);
 			}
 			else
@@ -40,6 +40,7 @@ public class StorageProxy implements StorageProxyMBean
 				messageMap.put(target, message);
 			}
 		}
+
 		return messageMap;
     }
     
@@ -60,47 +61,39 @@ public class StorageProxy implements StorageProxyMBean
         */
 
         long startTime = System.currentTimeMillis();
-		try
-		{
-			Map<EndPoint, EndPoint> endpointMap = StorageService.instance().getNStorageEndPointMap(rm.key());
-			// TODO: throw a thrift exception if we do not have N nodes
-			Map<EndPoint, Message> messageMap = createWriteMessages(rm, endpointMap);
-			for (Map.Entry<EndPoint, Message> entry : messageMap.entrySet())
-			{
-                Message message = entry.getValue();
-                EndPoint endpoint = entry.getKey();
-                logger.debug("insert writing key " + rm.key() + " to " + message.getMessageId() + "@" + endpoint);
-                MessagingService.getMessagingInstance().sendOneWay(message, endpoint);
-			}
 		
-            writeStats.add(System.currentTimeMillis() - startTime);
-        }
+    	Map<EndPoint, EndPoint> endpointMap = StorageService.instance().getNStorageEndPointMap(rm.key());
+		Map<EndPoint, Message> messageMap = createWriteMessages(rm, endpointMap);
+		for (Map.Entry<EndPoint, Message> entry : messageMap.entrySet())
+		{
+            Message message = entry.getValue();
+            EndPoint endpoint = entry.getKey();
+
+            MessagingService.getMessagingInstance().sendOneWay(message, endpoint);
+		}
+	
+        writeStats.add(System.currentTimeMillis() - startTime);
     }
 
     public static void insertBlocking(RowMutation rm) throws UnavailableException
     {
         long startTime = System.currentTimeMillis();
-        Message message = null;
-        try
-        {
-            message = rm.makeRowMutationMessage();
-       
-            QuorumResponseHandler<Boolean> quorumResponseHandler = new QuorumResponseHandler<Boolean>(
-                    DatabaseDescriptor.getReplicationFactor(),
-                    new WriteResponseResolver());
-            EndPoint[] endpoints = StorageService.instance().getNStorageEndPoint(rm.key());
-            logger.debug("insertBlocking writing key " + rm.key() + " to " + message.getMessageId() + "@[" + StringUtils.join(endpoints, ", ") + "]");
-            // TODO: throw a thrift exception if we do not have N nodes
-
-            MessagingService.getMessagingInstance().sendRR(message, endpoints, quorumResponseHandler);
-            if (!quorumResponseHandler.get())
-                throw new UnavailableException();
-       
-            writeStats.add(System.currentTimeMillis() - startTime);
-        }
+        Message message = rm.makeRowMutationMessage();
+   
+        QuorumResponseHandler<Boolean> quorumResponseHandler = new QuorumResponseHandler<Boolean>(
+                DatabaseDescriptor.getReplicationFactor(),
+                new WriteResponseResolver());
+        EndPoint[] endpoints = StorageService.instance().getNStorageEndPoint(rm.key());
+        logger.debug("insertBlocking writing key " + rm.key() + " to " + message.getMessageId() + "@[" + StringUtils.join(endpoints, ", ") + "]");
+      
+        MessagingService.getMessagingInstance().sendRR(message, endpoints, quorumResponseHandler);
+        if (!quorumResponseHandler.get())
+            throw new UnavailableException();
+   
+        writeStats.add(System.currentTimeMillis() - startTime);
     }
     
-    private static Map<String, Message> constructMessages(Map<String, ReadCommand> readMessages) throws IOException
+    private static Map<String, Message> constructMessages(Map<String, ReadCommand> readMessages) 
     {
         Map<String, Message> messages = new HashMap<String, Message>();
         Set<String> keys = readMessages.keySet();        
@@ -172,19 +165,10 @@ public class StorageProxy implements StorageProxyMBean
         EndPoint endPoint = StorageService.instance().findSuitableEndPoint(command.key);
         assert endPoint != null;
         Message message = command.makeReadMessage();
-        logger.debug("weakreadremote reading " + command + " from " + message.getMessageId() + "@" + endPoint);
+        
         message.addHeader(ReadCommand.DO_REPAIR, ReadCommand.DO_REPAIR.getBytes());
         IAsyncResult iar = MessagingService.getMessagingInstance().sendRR(message, endPoint);
-        byte[] body;
-        try
-        {
-            body = iar.get(DatabaseDescriptor.getRpcTimeout(), TimeUnit.MILLISECONDS);
-        }
-        catch (TimeoutException e)
-        {
-            throw new RuntimeException("error reading key " + command.key, e);
-            // TODO retry to a different endpoint?
-        }
+        byte[] body = iar.get(DatabaseDescriptor.getRpcTimeout(), TimeUnit.MILLISECONDS);
         DataInputBuffer bufIn = new DataInputBuffer();
         bufIn.reset(body, body.length);
         ReadResponse response = ReadResponse.serializer().deserialize(bufIn);
@@ -196,7 +180,6 @@ public class StorageProxy implements StorageProxyMBean
      * a specific set of column names from a given column family.
      */
     public static Row readProtocol(ReadCommand command, StorageService.ConsistencyLevel consistencyLevel)
-    throws IOException, TimeoutException
     {
         long startTime = System.currentTimeMillis();
 
@@ -226,7 +209,8 @@ public class StorageProxy implements StorageProxyMBean
         return row;
     }
 
-    public static Map<String, Row> readProtocol(String[] keys, ReadCommand readCommand, StorageService.ConsistencyLevel consistencyLevel) throws Exception
+    public static Map<String, Row> readProtocol(String[] keys, ReadCommand readCommand, 
+        StorageService.ConsistencyLevel consistencyLevel) 
     {
         Map<String, Row> rows = new HashMap<String, Row>();        
         switch ( consistencyLevel )
@@ -257,7 +241,7 @@ public class StorageProxy implements StorageProxyMBean
      * @throws IOException
      * @throws TimeoutException
      */
-    public static Map<String, Row> strongReadProtocol(String[] keys, ReadCommand readCommand) throws IOException, TimeoutException
+    public static Map<String, Row> strongReadProtocol(String[] keys, ReadCommand readCommand) 
     {       
         Map<String, Row> rows;
         // TODO: throw a thrift exception if we do not have N nodes
@@ -315,13 +299,12 @@ public class StorageProxy implements StorageProxyMBean
         */
         endPoints[0] = dataPoint;
         messages[0] = message;
-        logger.debug("strongread reading data for " + command + " from " + message.getMessageId() + "@" + dataPoint);
+      
         for (int i = 1; i < endPoints.length; i++)
         {
             EndPoint digestPoint = endpointList.get(i - 1);
             endPoints[i] = digestPoint;
             messages[i] = messageDigestOnly;
-            logger.debug("strongread reading digest for " + command + " from " + messageDigestOnly.getMessageId() + "@" + digestPoint);
         }
 
         try
@@ -330,7 +313,6 @@ public class StorageProxy implements StorageProxyMBean
 
             long startTime2 = System.currentTimeMillis();
             row = quorumResponseHandler.get();
-            logger.debug("quorumResponseHandler: " + (System.currentTimeMillis() - startTime2) + " ms.");
         }
         catch (DigestMismatchException ex)
         {
@@ -351,7 +333,7 @@ public class StorageProxy implements StorageProxyMBean
         return row;
     }
 
-    private static Map<String, Message[]> constructReplicaMessages(Map<String, ReadCommand[]> readMessages) throws IOException
+    private static Map<String, Message[]> constructReplicaMessages(Map<String, ReadCommand[]> readMessages) 
     {
         Map<String, Message[]> messages = new HashMap<String, Message[]>();
         Set<String> keys = readMessages.keySet();
@@ -369,7 +351,7 @@ public class StorageProxy implements StorageProxyMBean
         return messages;
     }
     
-    private static MultiQuorumResponseHandler dispatchMessages(Map<String, ReadCommand[]> readMessages, Map<String, Message[]> messages) throws IOException
+    private static MultiQuorumResponseHandler dispatchMessages(Map<String, ReadCommand[]> readMessages, Map<String, Message[]> messages) 
     {
         Set<String> keys = messages.keySet();
         /* This maps the keys to the original data read messages */
@@ -423,7 +405,7 @@ public class StorageProxy implements StorageProxyMBean
     *  @return map containing key ---> Row
     *  @throws IOException, TimeoutException
    */
-    private static Map<String, Row> doStrongReadProtocol(Map<String, ReadCommand[]> readMessages) throws IOException
+    private static Map<String, Row> doStrongReadProtocol(Map<String, ReadCommand[]> readMessages)
     {        
         Map<String, Row> rows = new HashMap<String, Row>();
         /* Construct the messages to be sent to the replicas */
@@ -453,7 +435,7 @@ public class StorageProxy implements StorageProxyMBean
      * @return a mapping of key --> Row
      * @throws Exception
      */
-    public static Map<String, Row> weakReadProtocol(String[] keys, ReadCommand readCommand) throws Exception
+    public static Map<String, Row> weakReadProtocol(String[] keys, ReadCommand readCommand) 
     {
         Row row = null;
         Map<String, ReadCommand> readMessages = new HashMap<String, ReadCommand>();
@@ -485,7 +467,7 @@ public class StorageProxy implements StorageProxyMBean
     * one of the other replicas (in the same data center if possible) till we get the data. In the event we get
     * the data we perform consistency checks and figure out if any repairs need to be done to the replicas.
     */
-    private static Row weakReadLocal(ReadCommand command) throws IOException
+    private static Row weakReadLocal(ReadCommand command) 
     {
         logger.debug("weakreadlocal reading " + command);
         List<EndPoint> endpoints = StorageService.instance().getNLiveStorageEndPoint(command.key);

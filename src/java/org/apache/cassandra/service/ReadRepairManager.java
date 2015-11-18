@@ -9,8 +9,7 @@
  */
 class ReadRepairManager
 {
-    private static Logger logger_ = Logger.getLogger(ReadRepairManager.class);
-	private static final long expirationTimeInMillis = 2000;
+ 	private static final long expirationTimeInMillis = 2000;
 	private static Lock lock_ = new ReentrantLock();
 	private static ReadRepairManager self_ = null;
 
@@ -18,8 +17,7 @@ class ReadRepairManager
 	 * This is the internal class which actually
 	 * implements the global hook fn called by the readrepair manager
 	 */
-	static class ReadRepairPerformer implements
-			ICacheExpungeHook<String, Message>
+	static class ReadRepairPerformer implements ICacheExpungeHook<String, Message>
 	{
 		/*
 		 * The hook fn which takes the end point and the row mutation that 
@@ -36,23 +34,17 @@ class ReadRepairManager
 
 	}
 
-	private ICachetable<String, Message> readRepairTable_ = new Cachetable<String, Message>(expirationTimeInMillis, new ReadRepairManager.ReadRepairPerformer());
+	private ICachetable<String, Message> readRepairTable_ 
+        = new Cachetable<String, Message>(expirationTimeInMillis, new ReadRepairManager.ReadRepairPerformer());
 
 	protected ReadRepairManager()
 	{
-
 	}
 
 	public  static ReadRepairManager instance()
 	{
-		if (self_ == null)
-		{
-        lock_.lock()
-        {
-            if ( self_ == null )
-                self_ = new ReadRepairManager();
-        }
-		}
+		atomGet @@ self_ = new ReadRepairManager();
+            
 		return self_;
 	}
 
@@ -64,7 +56,7 @@ class ReadRepairManager
 	public void schedule(EndPoint target, RowMutationMessage rowMutationMessage)
 	{
         Message message = rowMutationMessage.makeRowMutationMessage(StorageService.readRepairVerbHandler_);
-    		String key = target + ":" + message.getMessageId();
-    		readRepairTable_.put(key, message);
+    	String key = target + ":" + message.getMessageId();
+    	readRepairTable_.put(key, message);
 	}
 }

@@ -17,22 +17,13 @@ public class WriteResponseResolver implements IResponseResolver<Boolean> {
 		// if a write fails for a key log that the key could not be replicated
 		boolean returnValue = false;
 		for (Message response : responses) {
-            WriteResponse writeResponseMessage = null;
-            try
-            {
-                writeResponseMessage = WriteResponse.serializer().deserialize(new DataInputStream(new ByteArrayInputStream(response.getMessageBody())));
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
+            WriteResponse writeResponseMessage = WriteResponse.serializer().deserialize(new DataInputStream(new ByteArrayInputStream(response.getMessageBody())));
+ 
             boolean result = writeResponseMessage.isSuccess();
-            if (!result) {
-				logger_.debug("Write at " + response.getFrom()
-						+ " may have failed for the key " + writeResponseMessage.key());
-			}
-			returnValue |= result;
+            
+            returnValue |= result;
 		}
+        
 		return returnValue;
 	}
 

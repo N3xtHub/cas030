@@ -38,7 +38,7 @@ public class PreLoad
         }
     }
     
-    void run(String userFile) throws Throwable
+    void run(String userFile) 
     {
         String table = DatabaseDescriptor.getTables().get(0);
         String cfName = Table.recycleBin_ + ":" + "Keys";
@@ -83,17 +83,9 @@ public class PreLoad
         logger_.info("Finished all the requisite clean up ...");
     }
 
-    
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) throws Throwable
+	public static void main(String[] args)
 	{
-		if(args.length != 1)
-		{
-			System.out.println("Usage: PreLoad <Fully qualified path of the file containing user names>");
-		}
-		// TODO Auto-generated method stub
+
 		LogUtil.init();
         StorageService s = StorageService.instance();
         s.start();

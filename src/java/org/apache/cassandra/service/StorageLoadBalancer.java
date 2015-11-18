@@ -29,55 +29,6 @@ final class StorageLoadBalancer implements IEndPointStateChangeSubscriber, IComp
         */        
         public void run()
         {
-            /*
-            int threshold = (int)(StorageLoadBalancer.ratio_ * averageSystemLoad());
-            int myLoad = localLoad();            
-            EndPoint predecessor = storageService_.getPredecessor(StorageService.getLocalStorageEndPoint());
-            logger_.debug("Trying to relocate the predecessor " + predecessor);
-            boolean value = tryThisNode(myLoad, threshold, predecessor);
-            if ( !value )
-            {
-                loadInfo2_.remove(predecessor);
-                EndPoint successor = storageService_.getSuccessor(StorageService.getLocalStorageEndPoint());
-                logger_.debug("Trying to relocate the successor " + successor);
-                value = tryThisNode(myLoad, threshold, successor);
-                if ( !value )
-                {
-                    loadInfo2_.remove(successor);
-                    while ( !loadInfo2_.isEmpty() )
-                    {
-                        EndPoint target = findARandomLightNode();
-                        if ( target != null )
-                        {
-                            logger_.debug("Trying to relocate the random node " + target);
-                            value = tryThisNode(myLoad, threshold, target);
-                            if ( !value )
-                            {
-                                loadInfo2_.remove(target);
-                            }
-                            else
-                            {
-                                break;
-                            }
-                        }
-                        else
-                        {
-                            // No light nodes available - this is NOT good.
-                            logger_.warn("Not even a single lightly loaded node is available ...");
-                            break;
-                        }
-                    }
-
-                    loadInfo2_.clear();                    
-                     // If we are here and no node was available to
-                     // perform load balance with we need to report and bail.                    
-                    if ( !value )
-                    {
-                        logger_.warn("Load Balancing operations weren't performed for this node");
-                    }
-                }                
-            }
-            */        
         }
     }
 
@@ -96,7 +47,6 @@ final class StorageLoadBalancer implements IEndPointStateChangeSubscriber, IComp
         }
     }
 
-    private static final Logger logger_ = Logger.getLogger(StorageLoadBalancer.class);
     private static final String lbStage_ = "LOAD-BALANCER-STAGE";
     private static final String moveMessageVerbHandler_ = "MOVE-MESSAGE-VERB-HANDLER";
     /* time to delay in minutes the actual load balance procedure if heavily loaded */
@@ -153,9 +103,7 @@ final class StorageLoadBalancer implements IEndPointStateChangeSubscriber, IComp
         }       
     }
 
-    /*
-     * Load information associated with a given endpoint.
-    */
+    // Load information associated with a given endpoint.
     LoadInfo getLoad(EndPoint ep)
     {
         LoadInfo li = loadInfo_.get(ep);        
@@ -181,18 +129,4 @@ final class StorageLoadBalancer implements IEndPointStateChangeSubscriber, IComp
 class MoveMessage implements Serializable
 {
     private Token targetToken_;
-
-    private MoveMessage()
-    {
-    }
-
-    MoveMessage(Token targetToken)
-    {
-        targetToken_ = targetToken;
-    }
-
-    Token getTargetToken()
-    {
-        return targetToken_;
-    }
 }
