@@ -1,6 +1,5 @@
 public class MultiQuorumResponseHandler implements IAsyncCallback
 { 
-    private static Logger logger_ = Logger.getLogger( QuorumResponseHandler.class );
     private Lock lock_ = new ReentrantLock();
     private Condition condition_;
     /* This maps the keys to the original data read messages */
@@ -31,13 +30,12 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
         
         public void attachContext(Object o)
         {
-            throw new UnsupportedOperationException("This operation is not supported in this implementation");
+            throw new UnsupportedOperationException();
         }
         
         public void response(Message response)
         {
             lock_.lock();
-            try
             {
                 responses_.add(response);
                 int majority = (DatabaseDescriptor.getReplicationFactor() >> 1) + 1;                            
@@ -45,11 +43,10 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
                 {
                     onCompletion();               
                 }
-                lock_.unlock();
             }
         }
         
-        private void onCompletion() throws IOException
+        private void onCompletion()
         {
             Row row = responseResolver_.resolve(responses_);
             MultiQuorumResponseHandler.this.onCompleteResponse(row);
@@ -86,9 +83,7 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
     
     public Row[] get() throws TimeoutException
     {
-        long startTime = System.currentTimeMillis();
-        lock_.lock();
-        try
+        lock_.lock()
         {            
             boolean bVal = true;            
             if ( !done_.get() )
@@ -106,10 +101,6 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
                 }                
                 throw new TimeoutException("Operation timed out - received only " +  responses_.size() + " responses from " + sb.toString() + " .");
             }
-        }
-        finally
-        {
-            lock_.unlock();
         }
         
         return responses_.toArray( new Row[0] );
@@ -144,10 +135,10 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
      */
     public void response(Message message)
     {
-        lock_.lock();
-        SingleQuorumResponseHandler handler = handlers_.get(message.getMessageId());
-        handler.response(message);
-        lock_.unlock();
+        lock_.lock() {
+            SingleQuorumResponseHandler handler = handlers_.get(message.getMessageId());
+            handler.response(message);
+        }
     }
     
     /**

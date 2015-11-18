@@ -7,8 +7,6 @@
  */
 public class ReadResponseResolver implements IResponseResolver<Row>
 {
-    private static Logger logger_ = Logger.getLogger(WriteResponseResolver.class);
-
 	/
 	 * This method for resolving read data should look at the timestamps of each
 	 * of the columns that are read and should pick up columns with the latest
@@ -16,7 +14,7 @@ public class ReadResponseResolver implements IResponseResolver<Row>
 	 * repair request should be scheduled.
 	 * 
 	 */
-	public Row resolve(List<Message> responses) throws DigestMismatchException
+	public Row resolve(List<Message> responses)
 	{
         long startTime = System.currentTimeMillis();
 		Row retRow = null;
@@ -42,8 +40,7 @@ public class ReadResponseResolver implements IResponseResolver<Row>
             {
                 long start = System.currentTimeMillis();
                 ReadResponse result = ReadResponse.serializer().deserialize(bufIn);
-                logger_.debug( "Response deserialization time : " + (System.currentTimeMillis() - start) + " ms.");
-    			if(!result.isDigestQuery())
+                if(!result.isDigestQuery())
     			{
     				rowList.add(result.row());
     				endPoints.add(response.getFrom());
@@ -108,22 +105,20 @@ public class ReadResponseResolver implements IResponseResolver<Row>
 
 	public boolean isDataPresent(List<Message> responses)
 	{
-		boolean isDataPresent = false;
 		for (Message response : responses)
 		{
             byte[] body = response.getMessageBody();
-			DataInputBuffer bufIn = new DataInputBuffer();
-            bufIn.reset(body, body.length);
-            try
+			using (DataInputBuffer bufIn = new DataInputBuffer() ) 
             {
-    			ReadResponse result = ReadResponse.serializer().deserialize(bufIn);
+                bufIn.reset(body, body.length);
+            	ReadResponse result = ReadResponse.serializer().deserialize(bufIn);
     			if(!result.isDigestQuery())
     			{
-    				isDataPresent = true;
+    				return true; // data is present
     			}
-                bufIn.close();
-            }                      
+            }                     
 		}
-		return isDataPresent;
+
+		return false;
 	}
 }

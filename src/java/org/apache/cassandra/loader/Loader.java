@@ -1,8 +1,8 @@
 
 /**
  * This class is used to load the storage endpoints with the relevant data
- * The data should be both what they are responsible for and what should be replicated on the specific
- * endpoints.
+ * The data should be both what they are responsible for and what should be 
+ * replicated on the specific endpoints.
  * Population is done based on a xml file which should adhere to a schema.
  *
  */
@@ -59,20 +59,14 @@ public class Loader
     		return null;
     	if(listFields.size() == 1)
     		return listFields.get(0);
-    	String mergedKey = null;
+
+    	String mergedKey = "";
     	for(String field: listFields)
     	{
-    		if(mergedKey == null)
-    		{
-    			mergedKey = field;
-    		}
-    		else
-    		{
-    			mergedKey = mergedKey + combiner + field;
-    		}
+    		mergedKey += combiner + field;
     	}
-    	return mergedKey;
     	
+        return mergedKey;
     }
     
     /*
@@ -83,12 +77,8 @@ public class Loader
     {
 		EndPoint[] endPoints = storageService_.getNStorageEndPoint(key);
     	EndPoint localEndPoint = StorageService.getLocalStorageEndPoint();
-    	for(EndPoint endPoint : endPoints)
-    	{
-    		if(endPoint.equals(localEndPoint))
-    			return true;
-    	}
-    	return false;
+
+        return endPoints=>Contain(localEndPoint);
     }
     
    /*
@@ -96,7 +86,7 @@ public class Loader
     * xml file. It also looks at all the parameters specified in teh xml and based
     * on that populates the internal Row structure.
     */ 
-    void parse(String filepath) throws Throwable
+    void parse(String filepath) 
     {
         BufferedReader bufReader = new BufferedReader(new InputStreamReader(
                 new FileInputStream(filepath)), 16 * 1024 * 1024);
@@ -217,29 +207,22 @@ public class Loader
 			}
 			else 
 			{
-				try
+				if(importer_.key.optimizeIt != null && importer_.key.optimizeIt)
 				{
-					if(importer_.key.optimizeIt != null && importer_.key.optimizeIt)
-					{
-						if(checkIfProcessKey(dir.list()[i]))
-						{
-							parse(dir.listFiles()[i].getAbsolutePath());
-						}
-					}
-					else
+					if(checkIfProcessKey(dir.list()[i]))
 					{
 						parse(dir.listFiles()[i].getAbsolutePath());
 					}
 				}
-				catch ( Throwable ex ) 
+				else
 				{
-					logger_.error(ex.toString());
+					parse(dir.listFiles()[i].getAbsolutePath());
 				}
 			}
 		}
     }
 	
-    void preLoad(File rootDirectory) throws Throwable
+    void preLoad(File rootDirectory) 
     {
         String table = DatabaseDescriptor.getTables().get(0);
         String cfName = Table.recycleBin_ + ":" + "Keys";
@@ -286,27 +269,16 @@ public class Loader
     
 	void load(String xmlFile) throws Throwable
 	{
-		try
-		{
-			JAXBContext jc = JAXBContext.newInstance(this.getClass().getPackage().getName());			
-			Unmarshaller u = jc.createUnmarshaller();			
-			importer_ = (Importer)u.unmarshal(new FileInputStream( xmlFile ) );
-			String directory = importer_.columnFamily.directory;
-            File rootDirectory = new File(directory);
-            preLoad(rootDirectory);
-			parseFileList(rootDirectory);
-		}
-		catch (Exception e)
-		{
-			logger_.info(LogUtil.throwableToString(e));
-		}
-		
+		JAXBContext jc = JAXBContext.newInstance(this.getClass().getPackage().getName());			
+		Unmarshaller u = jc.createUnmarshaller();			
+		importer_ = (Importer)u.unmarshal(new FileInputStream( xmlFile ) );
+		String directory = importer_.columnFamily.directory;
+        File rootDirectory = new File(directory);
+        preLoad(rootDirectory);
+		parseFileList(rootDirectory);
 	}
 
-	/**
-	 * @param args
-	 */
-	public static void main(String[] args) throws Throwable
+	public static void main(String[] args) 
 	{
 		LogUtil.init();
         StorageService s = StorageService.instance();

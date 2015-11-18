@@ -30,11 +30,4 @@ class LoadInfo
     {
         return diskSpace_;
     }
-    
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder("");       
-        sb.append(diskSpace_);
-        return sb.toString();
-    }
 }

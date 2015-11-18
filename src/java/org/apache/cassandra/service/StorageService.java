@@ -7,7 +7,6 @@
  */
 public final class StorageService implements IEndPointStateChangeSubscriber, StorageServiceMBean
 {
-    private static Logger logger_ = Logger.getLogger(StorageService.class);     
     private final static String nodeId_ = "NODE-IDENTIFIER";
     private final static String loadAll_ = "LOAD-ALL";
     /* Gossip load after every 5 mins. */
@@ -24,15 +23,17 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
     public final static String loadVerbHandler_ = "LOAD-VERB-HANDLER";
     public final static String binaryVerbHandler_ = "BINARY-VERB-HANDLER";
     public final static String readRepairVerbHandler_ = "READ-REPAIR-VERB-HANDLER";
+    
     public final static String readVerbHandler_ = "ROW-READ-VERB-HANDLER";
     public final static String bootStrapInitiateVerbHandler_ = "BOOTSTRAP-INITIATE-VERB-HANDLER";
     public final static String bootStrapInitiateDoneVerbHandler_ = "BOOTSTRAP-INITIATE-DONE-VERB-HANDLER";
     public final static String bootStrapTerminateVerbHandler_ = "BOOTSTRAP-TERMINATE-VERB-HANDLER";
     public final static String dataFileVerbHandler_ = "DATA-FILE-VERB-HANDLER";
+    
     public final static String mbrshipCleanerVerbHandler_ = "MBRSHIP-CLEANER-VERB-HANDLER";
     public final static String bsMetadataVerbHandler_ = "BS-METADATA-VERB-HANDLER";
     public final static String calloutDeployVerbHandler_ = "CALLOUT-DEPLOY-VERB-HANDLER";
-    public static String rangeVerbHandler_ = "RANGE-VERB-HANDLER";
+    public       static String rangeVerbHandler_ = "RANGE-VERB-HANDLER";
 
     public static enum ConsistencyLevel
     {
@@ -89,15 +90,8 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
     */
     public static StorageService instance()
     {
-        if ( instance_ == null )
-        {
-            StorageService.createLock_.lock() {
-                if ( instance_ == null )
-                {
-                    instance_ = new StorageService();
-                }
-            }
-        }
+        atomGet @@ instance_ = new StorageService();
+
         return instance_;
     }
 
@@ -191,9 +185,11 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
         StageManager.registerStage(HttpConnection.httpStage_, new SingleThreadedStage("HTTP-REQUEST"));
 
         if ( DatabaseDescriptor.isRackAware() )
-            nodePicker_ = new RackAwareStrategy(tokenMetadata_, partitioner_, DatabaseDescriptor.getReplicationFactor(), DatabaseDescriptor.getStoragePort());
+            nodePicker_ = new RackAwareStrategy(tokenMetadata_, partitioner_, 
+                    DatabaseDescriptor.getReplicationFactor(), DatabaseDescriptor.getStoragePort());
         else
-            nodePicker_ = new RackUnawareStrategy(tokenMetadata_, partitioner_, DatabaseDescriptor.getReplicationFactor(), DatabaseDescriptor.getStoragePort());
+            nodePicker_ = new RackUnawareStrategy(tokenMetadata_, partitioner_,
+                DatabaseDescriptor.getReplicationFactor(), DatabaseDescriptor.getStoragePort());
     }
 
     protected ZooKeeper getZooKeeperHandle()

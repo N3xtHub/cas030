@@ -13,41 +13,42 @@ class ConsistencyManager implements Runnable
   				handleDigestResponses();
   		}
           
-      public void attachContext(Object o)
-      {
-          throw new UnsupportedOperationException("This operation is not currently supported.");
-      }
+        public void attachContext(Object o)
+        {
+            throw new UnsupportedOperationException();
+        }
   		
   		private void handleDigestResponses()
   		{
-          DataInputBuffer bufIn = new DataInputBuffer();
-  			  for( Message response : responses_ )
-  			  {
-  				  byte[] body = response.getMessageBody();            
-  	        bufIn.reset(body, body.length);
-            ReadResponse result = ReadResponse.serializer().deserialize(bufIn);
-            byte[] digest = result.digest();
-            if( !Arrays.equals(row_.digest(), digest) )
-  				  {
-               	doReadRepair();
-               	break;
-  				  }
+            DataInputBuffer bufIn = new DataInputBuffer();
+  			
+            for( Message response : responses_ )
+  			{
+  				byte[] body = response.getMessageBody();            
+  	            bufIn.reset(body, body.length);
+                ReadResponse result = ReadResponse.serializer().deserialize(bufIn);
+                byte[] digest = result.digest();
+                if( !Arrays.equals(row_.digest(), digest) )
+  				{
+               	    doReadRepair();
+               	    break;
+  				}
   			}
   		}
   		
   		private void doReadRepair()
   		{
-  		  IResponseResolver<Row> readResponseResolver = new ReadResponseResolver();
-        /* Add the local storage endpoint to the replicas_ list */
-        replicas_.add(StorageService.getLocalStorageEndPoint());
+  		    IResponseResolver<Row> readResponseResolver = new ReadResponseResolver();
+            /* Add the local storage endpoint to the replicas_ list */
+            replicas_.add(StorageService.getLocalStorageEndPoint());
   			
-        IAsyncCallback responseHandler = new DataRepairHandler(
+            IAsyncCallback responseHandler = new DataRepairHandler(
                   ConsistencyManager.this.replicas_.size(), readResponseResolver);	
-        ReadCommand readCommand = constructReadMessage(false);
-        Message message = readCommand.makeReadMessage();
+            ReadCommand readCommand = constructReadMessage(false);
+            Message message = readCommand.makeReadMessage();
         
-        MessagingService.getMessagingInstance().sendRR(message, r
-                eplicas_.toArray(new EndPoint[replicas_.size()]), responseHandler);
+            MessagingService.getMessagingInstance().sendRR(message, 
+                replicas_.toArray(new EndPoint[replicas_.size()]), responseHandler);
   		}
   	}
 	
@@ -65,7 +66,6 @@ class ConsistencyManager implements Runnable
   		
   		public void response(Message message)
   		{
-  			logger_.debug("Received responses in DataRepairHandler : " + message.toString());
   			responses_.add(message);
   			if ( responses_.size() == majority_ )
   			{
@@ -76,7 +76,7 @@ class ConsistencyManager implements Runnable
           
       public void attachContext(Object o)
       {
-          throw new UnsupportedOperationException("This operation is not currently supported.");
+          throw new UnsupportedOperationException();
       }
   		
   		public void callMe(String key, String value)
@@ -105,9 +105,9 @@ class ConsistencyManager implements Runnable
 
   	public void run()
   	{
-      ReadCommand readCommandDigestOnly = constructReadMessage(true);
+        ReadCommand readCommandDigestOnly = constructReadMessage(true);
   		Message message = readCommandDigestOnly.makeReadMessage();
-      MessagingService.getMessagingInstance()
+        MessagingService.getMessagingInstance()
           .sendRR(message, replicas_.toArray(new EndPoint[replicas_.size()]), new DigestResponseHandler());
   	}
       

@@ -1,8 +1,6 @@
 
 public class CassandraServer implements Cassandra.Iface
 {
-	private static Logger logger = Logger.getLogger(CassandraServer.class);
-
     private final static List<column_t> EMPTY_COLUMNS = Arrays.asList();
     private final static List<superColumn_t> EMPTY_SUPERCOLUMNS = Arrays.asList();
 
@@ -23,7 +21,6 @@ public class CassandraServer implements Cassandra.Iface
 	 */
 	public void start()
     {
-		LogUtil.init();
 		storageService.start();
 	}
 	
@@ -32,10 +29,7 @@ public class CassandraServer implements Cassandra.Iface
         Table table = Table.open(tablename);
         for (String cfName : columnFamilyNames)
         {
-            if (!table.getColumnFamilies().contains(cfName))
-            {
-                throw new ColumnFamilyNotDefinedException("Column Family " + cfName + " is invalid.");
-            }
+            check@@ table.getColumnFamilies().contains(cfName));
         }
 	}
     
@@ -226,7 +220,6 @@ public class CassandraServer implements Cassandra.Iface
 
     public List<superColumn_t> get_slice_super(String tablename, String key, String columnFamily, int start, int count) throws InvalidRequestException
     {
-        logger.debug("get_slice_super");
         ColumnFamily cfamily = readColumnFamily(new SliceReadCommand(tablename, key, columnFamily, start, count));
 
         Collection<IColumn> columns = cfamily.getAllColumns();
@@ -237,29 +230,16 @@ public class CassandraServer implements Cassandra.Iface
     {
         logger.debug("get_superColumn");
         ColumnFamily cfamily = readColumnFamily(new ColumnReadCommand(tablename, key, superColumnPath));
-        if (cfamily == null)
-        {
-            throw new NotFoundException();
-        }
+        
         Collection<IColumn> columns = cfamily.getAllColumns();
-        if (columns == null || columns.size() == 0)
-        {
-            throw new NotFoundException();
-        }
-
-        assert columns.size() == 1;
+        
         IColumn column = columns.iterator().next();
-        if (column.getSubColumns().size() == 0)
-        {
-            throw new NotFoundException();
-        }
-
+        
         return new superColumn_t(column.name(), thriftifyColumns(column.getSubColumns()));
     }
 
-    public void batch_insert_superColumn(batch_mutation_super_t batchMutationSuper, boolean block) throws InvalidRequestException, UnavailableException
+    public void batch_insert_superColumn(batch_mutation_super_t batchMutationSuper, boolean block)
     {
-        logger.debug("batch_insert_SuperColumn");
         RowMutation rm = RowMutation.getRowMutation(batchMutationSuper);
         Set<String> cfNames = rm.columnFamilyNames();
         validateCommand(rm.key(), rm.table(), cfNames.toArray(new String[cfNames.size()]));
@@ -275,27 +255,25 @@ public class CassandraServer implements Cassandra.Iface
 
     public String getStringProperty(String propertyName)
     {
-        if (propertyName.equals("cluster name"))
+        if (propertyName == "cluster name")
         {
             return DatabaseDescriptor.getClusterName();
         }
-        else if (propertyName.equals("config file"))
+        else if (propertyName == "config file")
         {
             String filename = DatabaseDescriptor.getConfigFileName();
-            try
+            StringBuffer fileData = new StringBuffer(8192);
+            BufferedInputStream stream = new BufferedInputStream(new FileInputStream(filename));
+            byte[] buf = new byte[1024];
+            int numRead;
+            while( (numRead = stream.read(buf)) != -1)
             {
-                StringBuffer fileData = new StringBuffer(8192);
-                BufferedInputStream stream = new BufferedInputStream(new FileInputStream(filename));
-                byte[] buf = new byte[1024];
-                int numRead;
-                while( (numRead = stream.read(buf)) != -1)
-                {
-                    String str = new String(buf, 0, numRead);
-                    fileData.append(str);
-                }
-                stream.close();
-                return fileData.toString();
+                String str = new String(buf, 0, numRead);
+                fileData.append(str);
             }
+            stream.close();
+            
+            return fileData.toString();
         }
         else if (propertyName.equals("version"))
         {
