@@ -1,37 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.apache.cassandra.service;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-
-import org.apache.log4j.Logger;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TProtocolFactory;
-import org.apache.thrift.server.TThreadPoolServer;
-import org.apache.thrift.transport.TServerSocket;
-import org.apache.thrift.transport.TTransportException;
-import org.apache.thrift.transport.TTransportFactory;
-import org.apache.thrift.TProcessorFactory;
-import org.apache.cassandra.config.DatabaseDescriptor;
-import org.apache.cassandra.utils.FBUtilities;
 
 /**
  * This class supports two methods for creating a Cassandra node daemon, 
@@ -41,7 +7,6 @@ import org.apache.cassandra.utils.FBUtilities;
  * <a href="http://commons.apache.org/daemon/jsvc.html">Commons Daemon</a>
  * documentation).
  * 
- * @author Eric Evans <eevans@racklabs.com>
  * 
  */
 
@@ -50,7 +15,7 @@ public class CassandraDaemon
     private static Logger logger = Logger.getLogger(CassandraDaemon.class);
     private TThreadPoolServer serverEngine;
 
-    private void setup() throws IOException, TTransportException
+    private void setup()
     {
         int listenPort = DatabaseDescriptor.getThriftPort();
         
@@ -66,13 +31,9 @@ public class CassandraDaemon
         peerStorageServer.start();
         Cassandra.Processor processor = new Cassandra.Processor(peerStorageServer);
 
-        // Transport
         TServerSocket tServerSocket = new TServerSocket(new InetSocketAddress(FBUtilities.getHostAddress(), listenPort));
-
-        // Protocol factory
         TProtocolFactory tProtocolFactory = new TBinaryProtocol.Factory();
 
-        // ThreadPool Server
         TThreadPoolServer.Options options = new TThreadPoolServer.Options();
         options.minWorkerThreads = 64;
         serverEngine = new TThreadPoolServer(new TProcessorFactory(processor),
@@ -90,22 +51,17 @@ public class CassandraDaemon
         setup();
     }
 
-    /** hook for JSVC */
     public void start()
     {
-        logger.info("Cassandra starting up...");
         serverEngine.serve();
     }
 
-    /** hook for JSVC */
     public void stop()
     {
-        logger.info("Cassandra shutting down...");
         serverEngine.stop();
     }
     
     
-    /** hook for JSVC */
     public void destroy()
     {        
     }
@@ -115,33 +71,13 @@ public class CassandraDaemon
         CassandraDaemon daemon = new CassandraDaemon();
         String pidFile = System.getProperty("cassandra-pidfile");
         
-        try
-        {   
-            daemon.setup();
+        daemon.setup();
 
-            if (pidFile != null)
-            {
-                new File(pidFile).deleteOnExit();
-            }
-
-            if (System.getProperty("cassandra-foreground") == null)
-            {
-                System.out.close();
-                System.err.close();
-            }
-
-            daemon.start();
-        }
-        catch (Exception e)
+        if (pidFile != null)
         {
-            String msg = "Exception encountered during startup.";
-            logger.error(msg, e);
-
-            // try to warn user on stdout too, if we haven't already detached
-            System.out.println(msg);
-            e.printStackTrace();
-
-            System.exit(3);
+            new File(pidFile).deleteOnExit();
         }
+
+        daemon.start();
     }
 }

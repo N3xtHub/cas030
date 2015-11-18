@@ -1,48 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package org.apache.cassandra.service;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.lang.management.ManagementFactory;
-
-import org.apache.commons.lang.StringUtils;
-
-import org.apache.cassandra.config.DatabaseDescriptor;
-import org.apache.cassandra.db.*;
-import org.apache.cassandra.io.DataInputBuffer;
-import org.apache.cassandra.net.EndPoint;
-import org.apache.cassandra.net.IAsyncResult;
-import org.apache.cassandra.net.Message;
-import org.apache.cassandra.net.MessagingService;
-import org.apache.cassandra.utils.TimedStatsDeque;
-import org.apache.log4j.Logger;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-
 
 public class StorageProxy implements StorageProxyMBean
 {
@@ -56,14 +11,7 @@ public class StorageProxy implements StorageProxyMBean
     static
     {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        try
-        {
-            mbs.registerMBean(new StorageProxy(), new ObjectName("org.apache.cassandra.service:type=StorageProxy"));
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        mbs.registerMBean(new StorageProxy(), new ObjectName("org.apache.cassandra.service:type=StorageProxy"));
     }
 
     /**
@@ -124,13 +72,7 @@ public class StorageProxy implements StorageProxyMBean
                 logger.debug("insert writing key " + rm.key() + " to " + message.getMessageId() + "@" + endpoint);
                 MessagingService.getMessagingInstance().sendOneWay(message, endpoint);
 			}
-		}
-        catch (IOException e)
-        {
-            throw new RuntimeException("error inserting key " + rm.key(), e);
-        }
-        finally
-        {
+		
             writeStats.add(System.currentTimeMillis() - startTime);
         }
     }
@@ -142,13 +84,7 @@ public class StorageProxy implements StorageProxyMBean
         try
         {
             message = rm.makeRowMutationMessage();
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-        try
-        {
+       
             QuorumResponseHandler<Boolean> quorumResponseHandler = new QuorumResponseHandler<Boolean>(
                     DatabaseDescriptor.getReplicationFactor(),
                     new WriteResponseResolver());
@@ -159,14 +95,7 @@ public class StorageProxy implements StorageProxyMBean
             MessagingService.getMessagingInstance().sendRR(message, endpoints, quorumResponseHandler);
             if (!quorumResponseHandler.get())
                 throw new UnavailableException();
-        }
-        catch (Exception e)
-        {
-            logger.error("error writing key " + rm.key(), e);
-            throw new UnavailableException();
-        }
-        finally
-        {
+       
             writeStats.add(System.currentTimeMillis() - startTime);
         }
     }
@@ -415,15 +344,7 @@ public class StorageProxy implements StorageProxyMBean
                 Message messageRepair = command.makeReadMessage();
                 MessagingService.getMessagingInstance().sendRR(messageRepair, endPoints,
                                                                quorumResponseHandlerRepair);
-                try
-                {
-                    row = quorumResponseHandlerRepair.get();
-                }
-                catch (DigestMismatchException e)
-                {
-                    // TODO should this be a thrift exception?
-                    throw new RuntimeException("digest mismatch reading key " + command.key, e);
-                }
+                row = quorumResponseHandlerRepair.get();
             }
         }
 
@@ -517,10 +438,7 @@ public class StorageProxy implements StorageProxyMBean
                 rows.put(row.key(), row);
             }
         }
-        catch (TimeoutException e)
-        {
-            throw new RuntimeException("timeout reading keys " + StringUtils.join(rows.keySet(), ", "), e);
-        }
+
         return rows;
     }
 

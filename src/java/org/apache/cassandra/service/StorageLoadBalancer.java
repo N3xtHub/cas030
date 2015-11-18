@@ -1,48 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.apache.cassandra.service;
-
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import org.apache.log4j.Logger;
-
-import org.apache.cassandra.concurrent.DebuggableScheduledThreadPoolExecutor;
-import org.apache.cassandra.concurrent.DebuggableThreadPoolExecutor;
-import org.apache.cassandra.concurrent.SingleThreadedStage;
-import org.apache.cassandra.concurrent.StageManager;
-import org.apache.cassandra.concurrent.ThreadFactoryImpl;
-import org.apache.cassandra.dht.Token;
-import org.apache.cassandra.gms.ApplicationState;
-import org.apache.cassandra.gms.EndPointState;
-import org.apache.cassandra.gms.Gossiper;
-import org.apache.cassandra.gms.IEndPointStateChangeSubscriber;
-import org.apache.cassandra.net.EndPoint;
-import org.apache.cassandra.net.IVerbHandler;
-import org.apache.cassandra.net.Message;
-import org.apache.cassandra.net.MessagingService;
 
 /*
  * The load balancing algorithm here is an implementation of
@@ -54,7 +9,6 @@ import org.apache.cassandra.net.MessagingService;
  * keys at an Endpoint. Monitor load infomation for a 5 minute
  * interval and then do load balancing operations if necessary.
  * 
- * Author : Avinash Lakshman ( alakshman@facebook.com) & Prashant Malik ( pmalik@facebook.com )
  */
 final class StorageLoadBalancer implements IEndPointStateChangeSubscriber, IComponentShutdown
 {
@@ -125,31 +79,6 @@ final class StorageLoadBalancer implements IEndPointStateChangeSubscriber, IComp
             }
             */        
         }
-
-        /*
-        private boolean tryThisNode(int myLoad, int threshold, EndPoint target)
-        {
-            boolean value = false;
-            LoadInfo li = loadInfo2_.get(target);
-            int pLoad = li.count();
-            if ( ((myLoad + pLoad) >> 1) <= threshold )
-            {
-                //calculate the number of keys to be transferred
-                int keyCount = ( (myLoad - pLoad) >> 1 );
-                logger_.debug("Number of keys we attempt to transfer to " + target + " " + keyCount);
-                // Determine the token that the target should join at.         
-                BigInteger targetToken = BootstrapAndLbHelper.getTokenBasedOnPrimaryCount(keyCount);
-                // Send a MoveMessage and see if this node is relocateable
-                MoveMessage moveMessage = new MoveMessage(targetToken);
-                Message message = new Message(StorageService.getLocalStorageEndPoint(), StorageLoadBalancer.lbStage_, StorageLoadBalancer.moveMessageVerbHandler_, new Object[]{moveMessage});
-                logger_.debug("Sending a move message to " + target);
-                IAsyncResult result = MessagingService.getMessagingInstance().sendRR(message, target);
-                value = (Boolean)result.get()[0];
-                logger_.debug("Response for query to relocate " + target + " is " + value);
-            }
-            return value;
-        }
-        */
     }
 
     class MoveMessageVerbHandler implements IVerbHandler
@@ -221,21 +150,6 @@ final class StorageLoadBalancer implements IEndPointStateChangeSubscriber, IComp
             String lInfoState = loadInfoState.getState();
             LoadInfo lInfo = new LoadInfo(lInfoState);
             loadInfo_.put(endpoint, lInfo);
-            
-            /*
-            int currentLoad = Integer.parseInt(loadInfoState.getState());
-            // update load information for this endpoint
-            loadInfo_.put(endpoint, currentLoad);
-
-            // clone load information to perform calculations
-            loadInfo2_.putAll(loadInfo_);
-            // Perform the analysis for load balance operations
-            if ( isHeavyNode() )
-            {
-                logger_.debug(StorageService.getLocalStorageEndPoint() + " is a heavy node with load " + localLoad());
-                // lb_.schedule( new LoadBalancer(), StorageLoadBalancer.delay_, TimeUnit.MINUTES );
-            }
-            */
         }       
     }
 
@@ -248,98 +162,8 @@ final class StorageLoadBalancer implements IEndPointStateChangeSubscriber, IComp
         return li;        
     }
 
-    /*
-    private boolean isMoveable()
-    {
-        if ( !isMoveable_.get() )
-            return false;
-        int myload = localLoad();
-        EndPoint successor = storageService_.getSuccessor(StorageService.getLocalStorageEndPoint());
-        LoadInfo li = loadInfo2_.get(successor);
-        // "load" is NULL means that the successor node has not
-        // yet gossiped its load information. We should return
-        // false in this case since we want to err on the side
-        // of caution.
-        if ( li == null )
-            return false;
-        else
-        {            
-            if ( ( myload + li.count() ) > StorageLoadBalancer.ratio_*averageSystemLoad() )
-                return false;
-            else
-                return true;
-        }
-    }
-    */
-
-    /*
-    private int localLoad()
-    {
-        LoadInfo value = loadInfo2_.get(StorageService.getLocalStorageEndPoint());
-        return (value == null) ? 0 : value.count();
-    }
-    */
-
-    /*
-    private int averageSystemLoad()
-    {
-        int nodeCount = loadInfo2_.size();
-        Set<EndPoint> nodes = loadInfo2_.keySet();
-
-        int systemLoad = 0;
-        for ( EndPoint node : nodes )
-        {
-            LoadInfo load = loadInfo2_.get(node);
-            if ( load != null )
-                systemLoad += load.count();
-        }
-        int averageLoad = (nodeCount > 0) ? (systemLoad / nodeCount) : 0;
-        logger_.debug("Average system load should be " + averageLoad);
-        return averageLoad;
-    }
-    */
     
-    /*
-    private boolean isHeavyNode()
-    {
-        return ( localLoad() > ( StorageLoadBalancer.ratio_ * averageSystemLoad() ) );
-    }
-    */
     
-    /*
-    private boolean isMoveable(EndPoint target)
-    {
-        int threshold = (int)(StorageLoadBalancer.ratio_ * averageSystemLoad());
-        if ( isANeighbour(target) )
-        {
-            // If the target is a neighbour then it is
-            // moveable if its
-            LoadInfo load = loadInfo2_.get(target);
-            if ( load == null )
-                return false;
-            else
-            {
-                int myload = localLoad();
-                int avgLoad = (load.count() + myload) >> 1;
-                if ( avgLoad <= threshold )
-                    return true;
-                else
-                    return false;
-            }
-        }
-        else
-        {
-            EndPoint successor = storageService_.getSuccessor(target);
-            LoadInfo sLoad = loadInfo2_.get(successor);
-            LoadInfo targetLoad = loadInfo2_.get(target);
-            if ( (sLoad.count() + targetLoad.count()) > threshold )
-                return false;
-            else
-                return true;
-        }
-    }
-    */
-
     private boolean isANeighbour(EndPoint neighbour)
     {
         EndPoint predecessor = storageService_.getPredecessor(StorageService.getLocalStorageEndPoint());
@@ -352,35 +176,6 @@ final class StorageLoadBalancer implements IEndPointStateChangeSubscriber, IComp
 
         return false;
     }
-
-    /*
-     * Determine the nodes that are lightly loaded. Choose at
-     * random one of the lightly loaded nodes and use them as
-     * a potential target for load balance.
-    */
-    /*
-    private EndPoint findARandomLightNode()
-    {
-        List<EndPoint> potentialCandidates = new ArrayList<EndPoint>();
-        Set<EndPoint> allTargets = loadInfo2_.keySet();
-        int avgLoad =  averageSystemLoad();
-
-        for( EndPoint target : allTargets )
-        {
-            LoadInfo load = loadInfo2_.get(target);
-            if ( load.count() < avgLoad )
-                potentialCandidates.add(target);
-        }
-
-        if ( potentialCandidates.size() > 0 )
-        {
-            Random random = new Random();
-            int index = random.nextInt(potentialCandidates.size());
-            return potentialCandidates.get(index);
-        }
-        return null;
-    }
-    */
 }
 
 class MoveMessage implements Serializable

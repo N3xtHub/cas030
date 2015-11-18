@@ -1,54 +1,15 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.apache.cassandra.service;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.cassandra.db.ColumnFamily;
-import org.apache.cassandra.db.ReadResponse;
-import org.apache.cassandra.db.Row;
-import org.apache.cassandra.db.RowMutation;
-import org.apache.cassandra.db.RowMutationMessage;
-import org.apache.cassandra.io.DataInputBuffer;
-import org.apache.cassandra.net.EndPoint;
-import org.apache.cassandra.net.Message;
-import org.apache.cassandra.utils.LogUtil;
-import org.apache.log4j.Logger;
-
 
 /**
  * This class is used by all read functions and is called by the Quorum 
  * when atleast a few of the servers ( few is specified in Quorum)
  * have sent the response . The resolve fn then schedules read repair 
  * and resolution of read data from the various servers.
- * Author : Avinash Lakshman ( alakshman@facebook.com) & Prashant Malik ( pmalik@facebook.com )
  */
 public class ReadResponseResolver implements IResponseResolver<Row>
 {
-	private static Logger logger_ = Logger.getLogger(WriteResponseResolver.class);
+    private static Logger logger_ = Logger.getLogger(WriteResponseResolver.class);
 
-	/*
+	/
 	 * This method for resolving read data should look at the timestamps of each
 	 * of the columns that are read and should pick up columns with the latest
 	 * timestamp. For those columns where the timestamp is not the latest a
@@ -94,10 +55,6 @@ public class ReadResponseResolver implements IResponseResolver<Row>
     				digest = result.digest();
     				isDigestQuery = true;
     			}
-            }
-            catch( IOException ex )
-            {
-                logger_.info(LogUtil.throwableToString(ex));
             }
 		}
 		// If there was a digest query compare it with all the data digests 
@@ -145,8 +102,8 @@ public class ReadResponseResolver implements IResponseResolver<Row>
             RowMutationMessage rowMutationMessage = new RowMutationMessage(rowMutation);
 	        ReadRepairManager.instance().schedule(endPoints.get(i),rowMutationMessage);
 		}
-        logger_.info("resolve: " + (System.currentTimeMillis() - startTime) + " ms.");
-		return retRow;
+        
+        return retRow;
 	}
 
 	public boolean isDataPresent(List<Message> responses)
@@ -165,11 +122,7 @@ public class ReadResponseResolver implements IResponseResolver<Row>
     				isDataPresent = true;
     			}
                 bufIn.close();
-            }
-            catch(IOException ex)
-            {
-                logger_.info(LogUtil.throwableToString(ex));
-            }                        
+            }                      
 		}
 		return isDataPresent;
 	}

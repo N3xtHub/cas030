@@ -1,46 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.apache.cassandra.service;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.*;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import org.apache.cassandra.config.DatabaseDescriptor;
-import org.apache.cassandra.db.ReadCommand;
-import org.apache.cassandra.db.Row;
-import org.apache.cassandra.net.EndPoint;
-import org.apache.cassandra.net.IAsyncCallback;
-import org.apache.cassandra.net.Message;
-import org.apache.cassandra.net.MessagingService;
-import org.apache.cassandra.utils.LogUtil;
-import org.apache.log4j.Logger;
-
-/**
- * Author : Avinash Lakshman ( alakshman@facebook.com) & Prashant Malik ( pmalik@facebook.com )
- */
-
 public class MultiQuorumResponseHandler implements IAsyncCallback
 { 
     private static Logger logger_ = Logger.getLogger( QuorumResponseHandler.class );
@@ -59,7 +16,6 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
     /**
      * This is used to handle the responses from the individual messages
      * that are sent out to the replicas.
-     * @author alakshman
      *
     */
     private class SingleQuorumResponseHandler implements IAsyncCallback
@@ -89,33 +45,14 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
                 {
                     onCompletion();               
                 }
-            }
-            catch ( IOException ex )
-            {
-                logger_.info( LogUtil.throwableToString(ex) );
-            }
-            finally
-            {
                 lock_.unlock();
             }
         }
         
         private void onCompletion() throws IOException
         {
-            try
-            {
-                Row row = responseResolver_.resolve(responses_);
-                MultiQuorumResponseHandler.this.onCompleteResponse(row);
-            }
-            catch ( DigestMismatchException ex )
-            {
-                /* 
-                 * The DigestMismatchException has the key for which the mismatch
-                 * occured bundled in it as context 
-                */
-                String key = ex.getMessage();
-                onDigestMismatch(key);
-            }
+            Row row = responseResolver_.resolve(responses_);
+            MultiQuorumResponseHandler.this.onCompleteResponse(row);
         }
         
         /**
@@ -154,16 +91,9 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
         try
         {            
             boolean bVal = true;            
-            try
-            {
-                if ( !done_.get() )
-                {                   
-                    bVal = condition_.await(DatabaseDescriptor.getRpcTimeout(), TimeUnit.MILLISECONDS);
-                }
-            }
-            catch ( InterruptedException ex )
-            {
-                logger_.debug( LogUtil.throwableToString(ex) );
+            if ( !done_.get() )
+            {                   
+                bVal = condition_.await(DatabaseDescriptor.getRpcTimeout(), TimeUnit.MILLISECONDS);
             }
             
             if ( !bVal && !done_.get() )
@@ -182,7 +112,6 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
             lock_.unlock();
         }
         
-        logger_.info("MultiQuorumResponseHandler: " + (System.currentTimeMillis() - startTime) + " ms.");
         return responses_.toArray( new Row[0] );
     }
     
@@ -216,15 +145,9 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
     public void response(Message message)
     {
         lock_.lock();
-        try
-        {
-            SingleQuorumResponseHandler handler = handlers_.get(message.getMessageId());
-            handler.response(message);
-        }
-        finally
-        {
-            lock_.unlock();
-        }
+        SingleQuorumResponseHandler handler = handlers_.get(message.getMessageId());
+        handler.response(message);
+        lock_.unlock();
     }
     
     /**

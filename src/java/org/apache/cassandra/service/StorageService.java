@@ -1,58 +1,9 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.apache.cassandra.service;
-
-import java.io.File;
-import java.io.IOException;
-import java.lang.management.ManagementFactory;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-
-import org.apache.cassandra.analytics.AnalyticsContext;
-import org.apache.cassandra.concurrent.*;
-import org.apache.cassandra.config.DatabaseDescriptor;
-import org.apache.cassandra.db.*;
-import org.apache.cassandra.dht.*;
-import org.apache.cassandra.gms.*;
-import org.apache.cassandra.locator.*;
-import org.apache.cassandra.net.*;
-import org.apache.cassandra.net.http.HttpConnection;
-import org.apache.cassandra.net.io.StreamContextManager;
-import org.apache.cassandra.tools.MembershipCleanerVerbHandler;
-import org.apache.cassandra.utils.FileUtils;
-import org.apache.cassandra.utils.LogUtil;
-import org.apache.log4j.Logger;
-import org.apache.zookeeper.ZooKeeper;
 
 /*
  * This abstraction contains the token/identifier of this node
  * on the identifier space. This token gets gossiped around.
  * This class will also maintain histograms of the load information
  * of other nodes in the cluster.
- * Author : Avinash Lakshman ( alakshman@facebook.com) & Prashant Malik ( pmalik@facebook.com )
  */
 public final class StorageService implements IEndPointStateChangeSubscriber, StorageServiceMBean
 {
@@ -127,8 +78,7 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
 
         public void doVerb(Message message)
         {
-            logger_.debug("Received a bootstrap initiate done message ...");
-            /* Let the Stream Manager do his thing. */
+             /* Let the Stream Manager do his thing. */
             StreamManager.instance(message.getFrom()).start();            
         }
     }
@@ -141,25 +91,11 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
     {
         if ( instance_ == null )
         {
-            StorageService.createLock_.lock();
-            try
-            {
+            StorageService.createLock_.lock() {
                 if ( instance_ == null )
                 {
-                    try
-                    {
-                        instance_ = new StorageService();
-                    }
-                    catch ( Throwable th )
-                    {
-                        logger_.error(LogUtil.throwableToString(th));
-                        System.exit(1);
-                    }
+                    instance_ = new StorageService();
                 }
-            }
-            finally
-            {
-                createLock_.unlock();
             }
         }
         return instance_;
@@ -209,16 +145,9 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
      */
     private void init()
     {
-        try
-        {
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            mbs.registerMBean(this, new ObjectName(
-                    "org.apache.cassandra.service:type=StorageService"));
-        }
-        catch (Exception e)
-        {
-            logger_.error(LogUtil.throwableToString(e));
-        }
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        mbs.registerMBean(this, new ObjectName(
+                    "cassandra.service:type=StorageService"));
     }
 
     public StorageService()
@@ -228,20 +157,22 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
         endPointSnitch_ = new EndPointSnitch();
         
         /* register the verb handlers */
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.tokenVerbHandler_, new TokenUpdateVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.binaryVerbHandler_, new BinaryVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.loadVerbHandler_, new LoadVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.mutationVerbHandler_, new RowMutationVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.readRepairVerbHandler_, new ReadRepairVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.readVerbHandler_, new ReadVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.bootStrapInitiateVerbHandler_, new Table.BootStrapInitiateVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.bootStrapInitiateDoneVerbHandler_, new StorageService.BootstrapInitiateDoneVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.bootStrapTerminateVerbHandler_, new StreamManager.BootstrapTerminateVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.dataFileVerbHandler_, new DataFileVerbHandler() );
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.mbrshipCleanerVerbHandler_, new MembershipCleanerVerbHandler() );
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.bsMetadataVerbHandler_, new BootstrapMetadataVerbHandler() );        
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.calloutDeployVerbHandler_, new CalloutDeployVerbHandler() );
-        MessagingService.getMessagingInstance().registerVerbHandlers(StorageService.rangeVerbHandler_, new RangeVerbHandler());
+        MessagingService.getMessagingInstance().registerVerbHandlers(
+            StorageService.
+                tokenVerbHandler_, new TokenUpdateVerbHandler());
+                binaryVerbHandler_, new BinaryVerbHandler());
+                loadVerbHandler_, new LoadVerbHandler());
+                mutationVerbHandler_, new RowMutationVerbHandler());
+                readRepairVerbHandler_, new ReadRepairVerbHandler());
+                readVerbHandler_, new ReadVerbHandler());
+                bootStrapInitiateVerbHandler_, new Table.BootStrapInitiateVerbHandler());
+                bootStrapInitiateDoneVerbHandler_, new StorageService.BootstrapInitiateDoneVerbHandler());
+                bootStrapTerminateVerbHandler_, new StreamManager.BootstrapTerminateVerbHandler());
+                dataFileVerbHandler_, new DataFileVerbHandler() );
+                mbrshipCleanerVerbHandler_, new MembershipCleanerVerbHandler() );
+                bsMetadataVerbHandler_, new BootstrapMetadataVerbHandler() );        
+                calloutDeployVerbHandler_, new CalloutDeployVerbHandler() );
+                rangeVerbHandler_, new RangeVerbHandler());
         
         /* register the stage for the mutations */
         int threadCount = DatabaseDescriptor.getThreadsPerPool();
@@ -251,9 +182,11 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
                 new LinkedBlockingQueue<Runnable>(), new ThreadFactoryImpl(
                         "CONSISTENCY-MANAGER"));
         
-        StageManager.registerStage(StorageService.mutationStage_, new MultiThreadedStage(StorageService.mutationStage_, threadCount));
-        StageManager.registerStage(StorageService.readStage_, new MultiThreadedStage(StorageService.readStage_, 2*threadCount));        
-        StageManager.registerStage(StorageService.mrStage_, new MultiThreadedStage(StorageService.mrStage_, threadCount));
+        StageManager.registerStage(StorageService.
+            mutationStage_, new MultiThreadedStage(StorageService.mutationStage_, threadCount));
+            readStage_, new MultiThreadedStage(StorageService.readStage_, 2*threadCount));        
+            mrStage_, new MultiThreadedStage(StorageService.mrStage_, threadCount));
+        
         /* Stage for handling the HTTP messages. */
         StageManager.registerStage(HttpConnection.httpStage_, new SingleThreadedStage("HTTP-REQUEST"));
 
@@ -275,15 +208,8 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
 
     static
     {
-        try
-        {
-            Class cls = Class.forName(DatabaseDescriptor.getPartitionerClass());
-            partitioner_ = (IPartitioner) cls.getConstructor().newInstance();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        Class cls = Class.forName(DatabaseDescriptor.getPartitionerClass());
+        partitioner_ = (IPartitioner) cls.getConstructor().newInstance();
     }
     
     public void start() throws IOException
@@ -419,14 +345,12 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
     */
     public Map<Range, List<EndPoint>> constructRangeToEndPointMap(Range[] ranges)
     {
-        logger_.debug("Constructing range to endpoint map ...");
         Map<Range, List<EndPoint>> rangeToEndPointMap = new HashMap<Range, List<EndPoint>>();
         for ( Range range : ranges )
         {
             EndPoint[] endpoints = getNStorageEndPoint(range.right());
             rangeToEndPointMap.put(range, new ArrayList<EndPoint>( Arrays.asList(endpoints) ) );
         }
-        logger_.debug("Done constructing range to endpoint map ...");
         return rangeToEndPointMap;
     }
     
@@ -439,14 +363,13 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
     */
     public Map<Range, List<EndPoint>> constructRangeToEndPointMap(Range[] ranges, Map<Token, EndPoint> tokenToEndPointMap)
     {
-        logger_.debug("Constructing range to endpoint map ...");
         Map<Range, List<EndPoint>> rangeToEndPointMap = new HashMap<Range, List<EndPoint>>();
         for ( Range range : ranges )
         {
             EndPoint[] endpoints = getNStorageEndPoint(range.right(), tokenToEndPointMap);
             rangeToEndPointMap.put(range, new ArrayList<EndPoint>( Arrays.asList(endpoints) ) );
         }
-        logger_.debug("Done constructing range to endpoint map ...");
+
         return rangeToEndPointMap;
     }
     
@@ -767,18 +690,15 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
         }
         
         if ( files.length > 0 )
-    {
+        {
             EndPoint target = new EndPoint(host, DatabaseDescriptor.getStoragePort());
             /* Set up the stream manager with the files that need to streamed */
             StreamManager.instance(target).addFilesToStream(streamContexts);
             /* Send the bootstrap initiate message */
             BootstrapInitiateMessage biMessage = new BootstrapInitiateMessage(streamContexts);
             Message message = BootstrapInitiateMessage.makeBootstrapInitiateMessage(biMessage);
-            logger_.debug("Sending a bootstrap initiate message to " + target + " ...");
             MessagingService.getMessagingInstance().sendOneWay(message, target);                
-            logger_.debug("Waiting for transfer to " + target + " to complete");
             StreamManager.instance(target).waitForStreamCompletion();
-            logger_.debug("Done with transfer to " + target);  
         }
     }
 

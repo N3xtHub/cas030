@@ -1,36 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.apache.cassandra.locator;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-
-import org.apache.cassandra.dht.Token;
-import org.apache.cassandra.net.EndPoint;
-
-
-/**
- * Author : Avinash Lakshman ( alakshman@facebook.com) & Prashant Malik ( pmalik@facebook.com )
- */
 
 public class TokenMetadata
 {
@@ -63,17 +30,12 @@ public class TokenMetadata
     public void update(Token token, EndPoint endpoint)
     {
         lock_.writeLock().lock();
-        try
         {            
             Token oldToken = endPointToTokenMap_.get(endpoint);
             if ( oldToken != null )
                 tokenToEndPointMap_.remove(oldToken);
             tokenToEndPointMap_.put(token, endpoint);
             endPointToTokenMap_.put(endpoint, token);
-        }
-        finally
-        {
-            lock_.writeLock().unlock();
         }
     }
     
@@ -83,17 +45,12 @@ public class TokenMetadata
      */
     public void remove(EndPoint endpoint)
     {
-        lock_.writeLock().lock();
-        try
+        lock_.writeLock().lock()
         {            
             Token oldToken = endPointToTokenMap_.get(endpoint);
             if ( oldToken != null )
                 tokenToEndPointMap_.remove(oldToken);            
             endPointToTokenMap_.remove(endpoint);
-        }
-        finally
-        {
-            lock_.writeLock().unlock();
         }
     }
     
@@ -144,15 +101,7 @@ public class TokenMetadata
     */
     public Map<EndPoint, Token> cloneEndPointTokenMap()
     {
-        lock_.readLock().lock();
-        try
-        {            
-            return new HashMap<EndPoint, Token>( endPointToTokenMap_ );
-        }
-        finally
-        {
-            lock_.readLock().unlock();
-        }
+        return new HashMap<EndPoint, Token>( endPointToTokenMap_ );
     }
     
     public String toString()

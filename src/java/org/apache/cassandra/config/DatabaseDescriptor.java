@@ -1,42 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.apache.cassandra.config;
-
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.io.*;
-
-import org.apache.log4j.Logger;
-
-import org.apache.cassandra.db.ColumnFamily;
-import org.apache.cassandra.db.Table;
-import org.apache.cassandra.db.TypeInfo;
-import org.apache.cassandra.db.SystemTable;
-import org.apache.cassandra.utils.FileUtils;
-import org.apache.cassandra.utils.XMLUtils;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
-
-/**
- * Author : Avinash Lakshman ( alakshman@facebook.com) & Prashant Malik ( pmalik@facebook.com )
- */
 
 public class DatabaseDescriptor
 {
@@ -136,18 +97,7 @@ public class DatabaseDescriptor
 
             /* Hashing strategy */
             partitionerClass_ = xmlUtils.getNodeValue("/Storage/Partitioner");
-            try
-            {
-                Class.forName(DatabaseDescriptor.getPartitionerClass());
-            }
-            catch (NullPointerException e)
-            {
-                throw new ConfigurationException("Missing partitioner directive /Storage/Partitioner");
-            }
-            catch (ClassNotFoundException e)
-            {
-                throw new ConfigurationException("Invalid partitioner class " + partitionerClass_);
-            }
+            Class.forName(DatabaseDescriptor.getPartitionerClass());
 
             /* Callout location */
             calloutLocation_ = xmlUtils.getNodeValue("/Storage/CalloutLocation");
@@ -424,25 +374,8 @@ public class DatabaseDescriptor
                 seeds_.add( seeds[i] );
             }
         }
-        catch (ConfigurationException e)
-        {
-            logger_.error("Fatal error: " + e.getMessage());
-            System.err.println("Bad configuration; unable to start server");
-            System.exit(1);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
-        
-        try
-        {
-            storeMetadata();
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+      
+        storeMetadata();
     }
     
 
@@ -522,36 +455,13 @@ public class DatabaseDescriptor
     	return columnIndexSizeInKB_ * 1024;
     }
 
-   
-    public static int getMemtableLifetime()
-    {
-      return memtableLifetime_;
-    }
-
-    public static int getMemtableSize()
-    {
-      return memtableSize_;
-    }
-
-    public static double getMemtableObjectCount()
-    {
-      return memtableObjectCount_;
-    }
-
+ 
     public static boolean getConsistencyCheck()
     {
       return doConsistencyCheck_;
     }
 
-    public static String getClusterName()
-    {
-        return clusterName_;
-    }
-
-    public static String getConfigFileName() {
-        return configFileName_;
-    }
-    
+     
     public static boolean isApplicationColumnFamily(String columnFamily)
     {
         return applicationColumnFamilies_.contains(columnFamily);
