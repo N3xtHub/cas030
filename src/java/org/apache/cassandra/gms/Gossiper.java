@@ -1,40 +1,4 @@
 /**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.apache.cassandra.gms;
-
-import java.io.*;
-import java.util.*;
-import java.net.InetAddress;
-
-import org.apache.cassandra.concurrent.SingleThreadedStage;
-import org.apache.cassandra.concurrent.StageManager;
-import org.apache.cassandra.config.DatabaseDescriptor;
-import org.apache.cassandra.net.EndPoint;
-import org.apache.cassandra.net.IVerbHandler;
-import org.apache.cassandra.net.Message;
-import org.apache.cassandra.net.MessagingService;
-import org.apache.cassandra.service.IComponentShutdown;
-import org.apache.cassandra.service.StorageService;
-import org.apache.cassandra.utils.LogUtil;
-import org.apache.log4j.Logger;
-
-/**
  * This module is responsible for Gossiping information for the local endpoint. This abstraction
  * maintains the list of live and dead endpoints. Periodically i.e. every 1 second this module
  * chooses a random node and initiates a round of Gossip with it. A round of Gossip involves 3
@@ -44,7 +8,6 @@ import org.apache.log4j.Logger;
  * GossipDigestAck2Message which completes a round of Gossip. This module as and when it hears one
  * of the three above mentioned messages updates the Failure Detector with the liveness information.
  *
- * Author : Avinash Lakshman ( alakshman@facebook.com) & Prashant Malik ( pmalik@facebook.com )
  */
 
 public class Gossiper implements IFailureDetectionEventListener, IEndPointStateChangePublisher, IComponentShutdown
@@ -53,36 +16,29 @@ public class Gossiper implements IFailureDetectionEventListener, IEndPointStateC
     {
         public void run()
         {
-            try
+            synchronized( Gossiper.instance() )
             {
-                synchronized( Gossiper.instance() )
+            	/* Update the local heartbeat counter. */
+                endPointStateMap_.get(localEndPoint_).getHeartBeatState().updateHeartBeat();
+                List<GossipDigest> gDigests = new ArrayList<GossipDigest>();
+                Gossiper.instance().makeRandomGossipDigest(gDigests);
+
+                if ( gDigests.size() > 0 )
                 {
-                	/* Update the local heartbeat counter. */
-                    endPointStateMap_.get(localEndPoint_).getHeartBeatState().updateHeartBeat();
-                    List<GossipDigest> gDigests = new ArrayList<GossipDigest>();
-                    Gossiper.instance().makeRandomGossipDigest(gDigests);
+                    Message message = makeGossipDigestSynMessage(gDigests);
+                    /* Gossip to some random live member */
+                    boolean bVal = doGossipToLiveMember(message);
 
-                    if ( gDigests.size() > 0 )
-                    {
-                        Message message = makeGossipDigestSynMessage(gDigests);
-                        /* Gossip to some random live member */
-                        boolean bVal = doGossipToLiveMember(message);
+                    /* Gossip to some unreachable member with some probability to check if he is back up */
+                    doGossipToUnreachableMember(message);
 
-                        /* Gossip to some unreachable member with some probability to check if he is back up */
-                        doGossipToUnreachableMember(message);
+                    /* Gossip to the seed. */
+                    if ( !bVal )
+                        doGossipToSeed(message);
 
-                        /* Gossip to the seed. */
-                        if ( !bVal )
-                            doGossipToSeed(message);
-
-                        logger_.trace("Performing status check ...");
-                        doStatusCheck();
-                    }
+                    logger_.trace("Performing status check ...");
+                    doStatusCheck();
                 }
-            }
-            catch ( Throwable th )
-            {
-                logger_.info( LogUtil.throwableToString(th) );
             }
         }
     }
@@ -974,32 +930,25 @@ class GossipDigestSynVerbHandler implements IVerbHandler
         byte[] bytes = message.getMessageBody();
         DataInputStream dis = new DataInputStream( new ByteArrayInputStream(bytes) );
 
-        try
-        {
-            GossipDigestSynMessage gDigestMessage = GossipDigestSynMessage.serializer().deserialize(dis);
-            /* If the message is from a different cluster throw it away. */
-            if ( !gDigestMessage.clusterId_.equals(DatabaseDescriptor.getClusterName()) )
-                return;
+        GossipDigestSynMessage gDigestMessage = GossipDigestSynMessage.serializer().deserialize(dis);
+        /* If the message is from a different cluster throw it away. */
+        if ( !gDigestMessage.clusterId_.equals(DatabaseDescriptor.getClusterName()) )
+            return;
 
-            List<GossipDigest> gDigestList = gDigestMessage.getGossipDigests();
-            /* Notify the Failure Detector */
-            Gossiper.instance().notifyFailureDetector(gDigestList);
+        List<GossipDigest> gDigestList = gDigestMessage.getGossipDigests();
+        /* Notify the Failure Detector */
+        Gossiper.instance().notifyFailureDetector(gDigestList);
 
-            doSort(gDigestList);
+        doSort(gDigestList);
 
-            List<GossipDigest> deltaGossipDigestList = new ArrayList<GossipDigest>();
-            Map<EndPoint, EndPointState> deltaEpStateMap = new HashMap<EndPoint, EndPointState>();
-            Gossiper.instance().examineGossiper(gDigestList, deltaGossipDigestList, deltaEpStateMap);
+        List<GossipDigest> deltaGossipDigestList = new ArrayList<GossipDigest>();
+        Map<EndPoint, EndPointState> deltaEpStateMap = new HashMap<EndPoint, EndPointState>();
+        Gossiper.instance().examineGossiper(gDigestList, deltaGossipDigestList, deltaEpStateMap);
 
-            GossipDigestAckMessage gDigestAck = new GossipDigestAckMessage(deltaGossipDigestList, deltaEpStateMap);
-            Message gDigestAckMessage = Gossiper.instance().makeGossipDigestAckMessage(gDigestAck);
-            logger_.trace("Sending a GossipDigestAckMessage to " + from);
-            MessagingService.getMessagingInstance().sendUdpOneWay(gDigestAckMessage, from);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        GossipDigestAckMessage gDigestAck = new GossipDigestAckMessage(deltaGossipDigestList, deltaEpStateMap);
+        Message gDigestAckMessage = Gossiper.instance().makeGossipDigestAckMessage(gDigestAck);
+        logger_.trace("Sending a GossipDigestAckMessage to " + from);
+        MessagingService.getMessagingInstance().sendUdpOneWay(gDigestAckMessage, from);
     }
 
     /*
@@ -1085,10 +1034,6 @@ class GossipDigestAckVerbHandler implements IVerbHandler
             Message gDigestAck2Message = Gossiper.instance().makeGossipDigestAck2Message(gDigestAck2);
             logger_.trace("Sending a GossipDigestAck2Message to " + from);
             MessagingService.getMessagingInstance().sendUdpOneWay(gDigestAck2Message, from);
-        }
-        catch ( IOException e )
-        {
-            throw new RuntimeException(e);
         }
     }
 }
