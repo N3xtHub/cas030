@@ -117,7 +117,6 @@ class EndPointStateSerializer implements ICompactSerializer<EndPointState>
             {
                 if ( Gossiper.MAX_GOSSIP_PACKET_SIZE - dos.size() < estimate )
                 {
-                    logger_.info("@@@@ Breaking out to respect the MTU size in EndPointState serializer. Estimate is " + estimate + " @@@@");
                     break;
                 }
             

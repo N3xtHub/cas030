@@ -7,13 +7,6 @@
 
 public interface IFailureDetector
 {
-    /**
-     * Failure Detector's knowledge of whether a node is up or
-     * down.
-     * 
-     * @param ep endpoint in question.
-     * @return true if UP and false if DOWN.
-     */
     public boolean isAlive(EndPoint ep);
     
     /**

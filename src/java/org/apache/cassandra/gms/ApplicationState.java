@@ -59,13 +59,13 @@ public class ApplicationState
 
 class ApplicationStateSerializer implements ICompactSerializer<ApplicationState>
 {
-    public void serialize(ApplicationState appState, DataOutputStream dos) throws IOException
+    public void serialize(ApplicationState appState, DataOutputStream dos)
     {
         dos.writeUTF(appState.state_);
         dos.writeInt(appState.version_);
     }
 
-    public ApplicationState deserialize(DataInputStream dis) throws IOException
+    public ApplicationState deserialize(DataInputStream dis) 
     {
         String state = dis.readUTF();
         int version = dis.readInt();

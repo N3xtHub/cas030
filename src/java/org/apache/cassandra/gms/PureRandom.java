@@ -17,9 +17,6 @@ class PureRandom extends Random
 
     public int nextInt(int ub)
     {
-    	if (ub <= 0)
-    		throw new IllegalArgumentException("ub must be positive");
-
         if ( lastUb_ !=  ub )
         {
             bs_.clear();

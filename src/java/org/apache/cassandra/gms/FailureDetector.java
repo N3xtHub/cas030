@@ -20,22 +20,9 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
     private static long creationTime_;
     
     public static IFailureDetector instance()
-    {        
-        if ( failureDetector_ == null )
-        {
-            FailureDetector.createLock_.lock();
-            try
-            {
-                if ( failureDetector_ == null )
-                {
-                    failureDetector_ = new FailureDetector();
-                }
-            }
-            finally
-            {
-                createLock_.unlock();
-            }
-        }        
+    {     
+        atomGet @   failureDetector_ = new FailureDetector();
+
         return failureDetector_;
     }
     
@@ -46,32 +33,15 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
     {
         creationTime_ = System.currentTimeMillis();
         // Register this instance with JMX
-        try
-        {
-            MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-            mbs.registerMBean(this, new ObjectName("org.apache.cassandra.gms:type=FailureDetector"));
-        }
-        catch (Exception e)
-        {
-            logger_.error(LogUtil.throwableToString(e));
-        }
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        mbs.registerMBean(this, new ObjectName("org.apache.cassandra.gms:type=FailureDetector"));
     }
     
-    /**
-     * Dump the inter arrival times for examination if necessary.
-     */
     public void dumpInterArrivalTimes()
     {
-        try
-        {
-            FileOutputStream fos = new FileOutputStream("/var/tmp/output-" + System.currentTimeMillis() + ".dat", true);
-            fos.write(toString().getBytes());
-            fos.close();
-        }
-        catch(Throwable th)
-        {
-            logger_.warn(LogUtil.throwableToString(th));
-        }
+        FileOutputStream fos = new FileOutputStream("/var/tmp/output-" + System.currentTimeMillis() + ".dat", true);
+        fos.write(toString().getBytes());
+        fos.close();
     }
     
     /**
@@ -86,32 +56,20 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
         long now = System.currentTimeMillis();
         if ( (now - FailureDetector.creationTime_) <= FailureDetector.uptimeThreshold_ )
             return;
-        try
-        {
-            FileOutputStream fos = new FileOutputStream("/var/tmp/output-" + System.currentTimeMillis() + "-" + ep + ".dat", true);
-            ArrivalWindow hWnd = arrivalSamples_.get(ep);
-            fos.write(hWnd.toString().getBytes());
-            fos.close();
-        }
-        catch(Throwable th)
-        {
-            logger_.warn(LogUtil.throwableToString(th));
-        }
-    }
     
+        FileOutputStream fos = new FileOutputStream("/var/tmp/output-" + System.currentTimeMillis() + "-" + ep + ".dat", true);
+        ArrivalWindow hWnd = arrivalSamples_.get(ep);
+        fos.write(hWnd.toString().getBytes());
+        fos.close();
+    }
+
     public boolean isAlive(EndPoint ep)
     {
-        try
-        {
-            /* If the endpoint in question is the local endpoint return true. */
-            String localHost = FBUtilities.getHostAddress();
-            if ( localHost.equals( ep.getHost() ) )
-                    return true;
-        }
-        catch( UnknownHostException ex )
-        {
-            logger_.info( LogUtil.throwableToString(ex) );
-        }
+        /* If the endpoint in question is the local endpoint return true. */
+        String localHost = FBUtilities.getHostAddress();
+        if ( localHost.equals( ep.getHost() ) )
+                return true;
+
     	/* Incoming port is assumed to be the Storage port. We need to change it to the control port */
     	EndPoint ep2 = new EndPoint(ep.getHost(), DatabaseDescriptor.getControlPort());        
         EndPointState epState = Gossiper.instance().getEndPointStateForEndPoint(ep2);
@@ -128,6 +86,7 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
             heartbeatWindow = new ArrivalWindow(sampleSize_);
             arrivalSamples_.put(ep, heartbeatWindow);
         }
+
         heartbeatWindow.add(now);
     }
     
@@ -138,22 +97,12 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
         {            
             return;
         }
+
         long now = System.currentTimeMillis();
         /* We need this so that we do not suspect a convict. */
         boolean isConvicted = false;
         double phi = hbWnd.phi(now);
-        logger_.trace("PHI for " + ep + " : " + phi);
-        
-        /*
-        if ( phi > phiConvictThreshold_ )
-        {            
-            isConvicted = true;     
-            for ( IFailureDetectionEventListener listener : fdEvntListeners_ )
-            {
-                listener.convict(ep);                
-            }
-        }
-        */
+       
         if ( !isConvicted && phi > phiSuspectThreshold_ )
         {     
             for ( IFailureDetectionEventListener listener : fdEvntListeners_ )
@@ -178,7 +127,6 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
         StringBuilder sb = new StringBuilder();
         Set<EndPoint> eps = arrivalSamples_.keySet();
         
-        sb.append("-----------------------------------------------------------------------");
         for ( EndPoint ep : eps )
         {
             ArrivalWindow hWnd = arrivalSamples_.get(ep);
@@ -186,7 +134,7 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
             sb.append(hWnd.toString());
             sb.append( System.getProperty("line.separator") );
         }
-        sb.append("-----------------------------------------------------------------------");
+        
         return sb.toString();
     }
     
