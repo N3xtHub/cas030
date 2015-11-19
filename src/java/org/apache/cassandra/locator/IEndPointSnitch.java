@@ -15,7 +15,7 @@ public interface IEndPointSnitch
      * @return true if on the same rack false otherwise
      * @throws UnknownHostException
      */
-    public boolean isOnSameRack(EndPoint host, EndPoint host2) throws UnknownHostException;
+    public boolean isOnSameRack(EndPoint host, EndPoint host2) ;
     
     /**
      * Helps determine if 2 nodes are in the same data center.
@@ -24,5 +24,5 @@ public interface IEndPointSnitch
      * @return true if in the same data center false otherwise
      * @throws UnknownHostException
      */
-    public boolean isInSameDataCenter(EndPoint host, EndPoint host2) throws UnknownHostException;
+    public boolean isInSameDataCenter(EndPoint host, EndPoint host2) ;
 }
