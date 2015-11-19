@@ -160,14 +160,7 @@ public class SSTable
         /* remove the cached index table from memory */
         indexMetadataMap_.remove(dataFile);
         /* Delete the checksum file associated with this data file */
-        try
-        {
-            ChecksumManager.onFileDelete(dataFile);
-        }
-        catch (IOException ex)
-        {
-            logger_.info(LogUtil.throwableToString(ex));
-        }
+        ChecksumManager.onFileDelete(dataFile);
 
         File file = new File(dataFile);
         assert file.exists() : "attempted to delete non-existing file " + dataFile;
@@ -224,28 +217,12 @@ public class SSTable
      * associated with these files. Also caches the file handles 
      * associated with these files.
     */
-    public static void onStart(List<String> filenames) throws IOException
+    public static void onStart(List<String> filenames) 
     {
         for (String filename : filenames)
         {
-            SSTable ssTable = null;
-            try
-            {
-                ssTable = new SSTable(filename, StorageService.getPartitioner());
-            }
-            catch (IOException ex)
-            {
-                logger_.info("Deleting corrupted file " + filename);
-                FileUtils.delete(filename);
-                logger_.warn(LogUtil.throwableToString(ex));
-            }
-            finally
-            {
-                if (ssTable != null)
-                {
-                    ssTable.close();
-                }
-            }
+            SSTable ssTable = new SSTable(filename, StorageService.getPartitioner());
+            if (ssTable != null) ssTable.close();
         }
     }
 
@@ -296,7 +273,7 @@ public class SSTable
      * of the data file associated with this SSTable. Use this
      * ctor to read the data in this file.
      */
-    public SSTable(String dataFileName, IPartitioner partitioner) throws IOException
+    public SSTable(String dataFileName, IPartitioner partitioner) 
     {
         dataFile_ = dataFileName;
         partitioner_ = partitioner;
@@ -307,7 +284,7 @@ public class SSTable
      * This ctor is used for writing data into the SSTable. Use this
      * version for non DB writes to the SSTable.
      */
-    public SSTable(String directory, String filename, IPartitioner partitioner) throws IOException
+    public SSTable(String directory, String filename, IPartitioner partitioner) 
     {
         dataFile_ = directory + System.getProperty("file.separator") + filename + "-Data.db";
         partitioner_ = partitioner;
@@ -317,7 +294,7 @@ public class SSTable
         SSTable.positionAfterFirstBlockIndex_ = dataWriter_.getCurrentPosition();
     }
 
-    private void loadBloomFilter(IFileReader indexReader, long size) throws IOException
+    private void loadBloomFilter(IFileReader indexReader, long size) 
     {
         /* read the position of the bloom filter */
         indexReader.seek(size - 8);
@@ -351,7 +328,7 @@ public class SSTable
         }
     }
 
-    private void loadIndexFile() throws IOException
+    private void loadIndexFile() 
     {
         logger_.debug("Loading indexes from " + dataFile_);
         IFileReader indexReader = null;
@@ -438,7 +415,7 @@ public class SSTable
         }
     }
 
-    private void init() throws IOException
+    private void init() 
     {
         /*
          * this is to prevent multiple threads from
@@ -456,7 +433,7 @@ public class SSTable
         }
     }
 
-    private String getFile(String name) throws IOException
+    private String getFile(String name) 
     {
         File file = new File(name);
         if (file.exists())
@@ -466,17 +443,13 @@ public class SSTable
         throw new IOException("File " + name + " was not found on disk.");
     }
 
-    public String getDataFileLocation() throws IOException
+    public String getDataFileLocation()
     {
         return getFile(dataFile_);
     }
 
-    private long beforeAppend(String decoratedKey) throws IOException
+    private long beforeAppend(String decoratedKey) 
     {
-        if (decoratedKey == null)
-        {
-            throw new IOException("Keys must not be null.");
-        }
         Comparator<String> c = partitioner_.getDecoratedKeyComparator();
         if (lastWrittenKey_ != null && c.compare(lastWrittenKey_, decoratedKey) > 0)
         {
@@ -488,7 +461,7 @@ public class SSTable
         return (lastWrittenKey_ == null) ? SSTable.positionAfterFirstBlockIndex_ : dataWriter_.getCurrentPosition();
     }
 
-    private void afterAppend(String decoratedKey, long position, long size) throws IOException
+    private void afterAppend(String decoratedKey, long position, long size) 
     {
         ++indexKeysWritten_;
         lastWrittenKey_ = decoratedKey;
@@ -504,10 +477,8 @@ public class SSTable
     /**
      * Dumps all the block indicies for this SSTable
      * at the end of the file.
-     *
-     * @throws IOException
      */
-    private void dumpBlockIndexes() throws IOException
+    private void dumpBlockIndexes() 
     {
         firstBlockPosition_ = dataWriter_.getCurrentPosition();
         for (SortedMap<String, BlockMetadata> block : blockIndexes_)
@@ -516,7 +487,7 @@ public class SSTable
         }
     }
 
-    private void dumpBlockIndex(SortedMap<String, BlockMetadata> blockIndex) throws IOException
+    private void dumpBlockIndex(SortedMap<String, BlockMetadata> blockIndex) 
     {
         /* Block Index is empty so bail. */
         if (blockIndex.size() == 0)
@@ -555,14 +526,14 @@ public class SSTable
         blockIndex.clear();
     }
 
-    public void append(String decoratedKey, DataOutputBuffer buffer) throws IOException
+    public void append(String decoratedKey, DataOutputBuffer buffer) 
     {
         long currentPosition = beforeAppend(decoratedKey);
         dataWriter_.append(decoratedKey, buffer);
         afterAppend(decoratedKey, currentPosition, buffer.getLength());
     }
 
-    public void append(String decoratedKey, byte[] value) throws IOException
+    public void append(String decoratedKey, byte[] value) 
     {
         long currentPosition = beforeAppend(decoratedKey);
         dataWriter_.append(decoratedKey, value);
@@ -573,10 +544,9 @@ public class SSTable
       TODO only the end_ part of the returned Coordinate is ever used.  Apparently this code works, but it's definitely due for some cleanup
       since the code fooling about with start_ appears to be irrelevant.
      */
-    public static Coordinate getCoordinates(String decoratedKey, IFileReader dataReader, IPartitioner partitioner) throws IOException
+    public static Coordinate getCoordinates(String decoratedKey, IFileReader dataReader, IPartitioner partitioner) 
     {
         List<KeyPositionInfo> indexInfo = indexMetadataMap_.get(dataReader.getFileName());
-        assert indexInfo != null && indexInfo.size() > 0;
         long start = 0L;
         long end;
         int index = Collections.binarySearch(indexInfo, new KeyPositionInfo(decoratedKey, partitioner));
@@ -616,12 +586,12 @@ public class SSTable
         return new Coordinate(start, end);
     }
 
-    public DataInputBuffer next(final String clientKey, String cfName, List<String> columnNames) throws IOException
+    public DataInputBuffer next(final String clientKey, String cfName, List<String> columnNames) 
     {
         return next(clientKey, cfName, columnNames, null);
     }
 
-    public DataInputBuffer next(final String clientKey, String cfName, List<String> columnNames, IndexHelper.TimeRange timeRange) throws IOException
+    public DataInputBuffer next(final String clientKey, String cfName, List<String> columnNames, IndexHelper.TimeRange timeRange)
     {
         IFileReader dataReader = null;
         try
@@ -661,7 +631,7 @@ public class SSTable
         }
     }
 
-    public DataInputBuffer next(String clientKey, String columnFamilyColumn) throws IOException
+    public DataInputBuffer next(String clientKey, String columnFamilyColumn) 
     {
         String[] values = RowMutation.getColumnAndColumnFamily(columnFamilyColumn);
         String columnFamilyName = values[0];
@@ -669,12 +639,12 @@ public class SSTable
         return next(clientKey, columnFamilyName, cnNames);
     }
 
-    public void close() throws IOException
+    public void close() 
     {
         close(new byte[0], 0);
     }
 
-    public void close(BloomFilter bf) throws IOException
+    public void close(BloomFilter bf) 
     {
         /* Any remnants in the blockIndex should be added to the dump */
         blockIndexes_.add(blockIndex_);
@@ -693,7 +663,7 @@ public class SSTable
     /**
      * Renames a temporary SSTable file to a valid data and index file
      */
-    public void closeRename(BloomFilter bf) throws IOException
+    public void closeRename(BloomFilter bf) 
     {
         close(bf);
         String tmpDataFile = dataFile_;
@@ -706,7 +676,7 @@ public class SSTable
         SSTable.indexMetadataMap_.put(dataFile_, keyPositionInfos);
     }
 
-    private void close(byte[] footer, int size) throws IOException
+    private void close(byte[] footer, int size) 
     {
         /*
          * Write the bloom filter for this SSTable.
@@ -742,14 +712,7 @@ public class SSTable
 
         private String cannonicalize(String filename)
         {
-            try
-            {
-                return new File(filename).getCanonicalPath();
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
+            return new File(filename).getCanonicalPath();
         }
 
         public List<KeyPositionInfo> get(String filename)

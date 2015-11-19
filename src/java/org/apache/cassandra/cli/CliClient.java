@@ -12,11 +12,9 @@ public class CliClient
     }
 
     // Execute a CLI Statement 
-    public void executeCLIStmt(String stmt) throws TException, NotFoundException, InvalidRequestException, UnavailableException
+    public void executeCLIStmt(String stmt) 
     {
-        CommonTree ast = null;
-
-        ast = CliCompiler.compileQuery(stmt);
+        CommonTree ast = CliCompiler.compileQuery(stmt);
 
         switch (ast.getType()) {
         case CliParser.NODE_EXIT:
@@ -93,11 +91,9 @@ public class CliClient
             return;
 
         int childCount = ast.getChildCount();
-        assert(childCount == 1);
-
+        
         CommonTree columnFamilySpec = (CommonTree)ast.getChild(0);
-        assert(columnFamilySpec.getType() == CliParser.NODE_COLUMN_ACCESS);
-
+        
         String tableName     = CliCompiler.getTableName(columnFamilySpec);
         String key           = CliCompiler.getKey(columnFamilySpec);
         String columnFamily  = CliCompiler.getColumnFamily(columnFamilySpec);
@@ -127,14 +123,10 @@ public class CliClient
             css_.out.printf("==> (name=%s, value=%s; timestamp=%d)\n",
                             col.columnName, col.value, col.timestamp);
         }
-        else
-        {
-            assert(false);
-        }
     }
 
     // Execute SET statement
-    private void executeSet(CommonTree ast) throws TException, InvalidRequestException, UnavailableException
+    private void executeSet(CommonTree ast) 
     {
         if (!CliMain.isConnected())
             return;
@@ -143,8 +135,7 @@ public class CliClient
         assert(childCount == 2);
 
         CommonTree columnFamilySpec = (CommonTree)ast.getChild(0);
-        assert(columnFamilySpec.getType() == CliParser.NODE_COLUMN_ACCESS);
-
+        
         String tableName     = CliCompiler.getTableName(columnFamilySpec);
         String key           = CliCompiler.getKey(columnFamilySpec);
         String columnFamily  = CliCompiler.getColumnFamily(columnFamilySpec);
@@ -243,35 +234,22 @@ public class CliClient
         
         CqlResult_t result = thriftClient_.executeQuery(query);
         
-        if (result == null)
+        List<Map<String, String>> rows = result.resultSet;
+        
+        if (rows != null)
         {
-            css_.out.println("Unexpected error. Received null result from server.");
-            return;
-        }
-
-        if ((result.errorTxt != null) || (result.errorCode != 0))
-        {
-            css_.out.println("Error: " + result.errorTxt);
-        }
-        else
-        {
-            List<Map<String, String>> rows = result.resultSet;
-            
-            if (rows != null)
+            for (Map<String, String> row : rows)
             {
-                for (Map<String, String> row : rows)
+                for (Iterator<Map.Entry<String, String>> it = row.entrySet().iterator(); it.hasNext(); )
                 {
-                    for (Iterator<Map.Entry<String, String>> it = row.entrySet().iterator(); it.hasNext(); )
-                    {
-                        Map.Entry<String, String> entry = it.next();
-                        String key = entry.getKey();
-                        String value = entry.getValue();
-                        css_.out.print(key + " = " + value + "; ");
-                    }
-                    css_.out.println();
+                    Map.Entry<String, String> entry = it.next();
+                    String key = entry.getKey();
+                    String value = entry.getValue();
+                    css_.out.print(key + " = " + value + "; ");
                 }
+                css_.out.println();
             }
-            css_.out.println("Statement processed.");
         }
+        css_.out.println("Statement processed.");
     }
 }

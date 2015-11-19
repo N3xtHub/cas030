@@ -13,33 +13,27 @@ public class BootstrapMetadataVerbHandler implements IVerbHandler
         byte[] body = message.getMessageBody();
         DataInputBuffer bufIn = new DataInputBuffer();
         bufIn.reset(body, body.length);
-        try
+       
+        BootstrapMetadataMessage bsMetadataMessage = BootstrapMetadataMessage.serializer().deserialize(bufIn);
+        BootstrapMetadata[] bsMetadata = bsMetadataMessage.bsMetadata_;
+        
+        /*
+         * This is for debugging purposes. Remove later.
+        */
+        for ( BootstrapMetadata bsmd : bsMetadata )
         {
-            BootstrapMetadataMessage bsMetadataMessage = BootstrapMetadataMessage.serializer().deserialize(bufIn);
-            BootstrapMetadata[] bsMetadata = bsMetadataMessage.bsMetadata_;
-            
-            /*
-             * This is for debugging purposes. Remove later.
-            */
-            for ( BootstrapMetadata bsmd : bsMetadata )
-            {
-                logger_.debug(bsmd.toString());                                      
-            }
-            
-            for ( BootstrapMetadata bsmd : bsMetadata )
-            {
-                long startTime = System.currentTimeMillis();
-                doTransfer(bsmd.target_, bsmd.ranges_);     
-                logger_.debug("Time taken to boostrap " + 
-                        bsmd.target_ + 
-                        " is " + 
-                        (System.currentTimeMillis() - startTime) +
-                        " msecs.");
-            }
+            logger_.debug(bsmd.toString());                                      
         }
-        catch ( IOException ex )
+        
+        for ( BootstrapMetadata bsmd : bsMetadata )
         {
-            logger_.info(LogUtil.throwableToString(ex));
+            long startTime = System.currentTimeMillis();
+            doTransfer(bsmd.target_, bsmd.ranges_);     
+            logger_.debug("Time taken to boostrap " + 
+                    bsmd.target_ + 
+                    " is " + 
+                    (System.currentTimeMillis() - startTime) +
+                    " msecs.");
         }
     }
     

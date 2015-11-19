@@ -24,11 +24,7 @@ public class MetricsRecord {
 		this.context = context;
 	}
 
-	/**
-	 * Returns the record name.
-	 *
-	 * @return the record name
-	 */
+	
 	public String getRecordName() {
 		return recordName;
 	}

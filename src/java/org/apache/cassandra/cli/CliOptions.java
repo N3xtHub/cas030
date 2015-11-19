@@ -30,16 +30,9 @@ public class CliOptions {
     public void processArgs(CliSessionState css, String[] args)
     {
         CommandLineParser parser = new PosixParser();
-        try
-        {
-            cmd = parser.parse(options, args);
-        }
-        catch (ParseException e)
-        {
-            printUsage();
-            e.printStackTrace();
-            System.exit(1);
-        }
+
+        cmd = parser.parse(options, args);
+
 
         if (!cmd.hasOption(HOST_OPTION))
         {

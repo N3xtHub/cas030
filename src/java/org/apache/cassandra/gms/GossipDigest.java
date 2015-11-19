@@ -21,44 +21,11 @@ public class GossipDigest implements Comparable<GossipDigest>
         return serializer_;
     }
     
-    GossipDigest(EndPoint endPoint, int generation, int maxVersion)
-    {
-        endPoint_ = endPoint;
-        generation_ = generation; 
-        maxVersion_ = maxVersion;
-    }
-    
-    EndPoint getEndPoint()
-    {
-        return endPoint_;
-    }
-    
-    int getGeneration()
-    {
-        return generation_;
-    }
-    
-    int getMaxVersion()
-    {
-        return maxVersion_;
-    }
-    
     public int compareTo(GossipDigest gDigest)
     {
         if ( generation_ != gDigest.generation_ )
             return ( generation_ - gDigest.generation_ );
         return (maxVersion_ - gDigest.maxVersion_);
-    }
-    
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append(endPoint_);
-        sb.append(":");
-        sb.append(generation_);
-        sb.append(":");
-        sb.append(maxVersion_);
-        return sb.toString();
     }
 }
 

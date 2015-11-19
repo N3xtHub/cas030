@@ -24,16 +24,7 @@ public class CliMain
         TBinaryProtocol binaryProtocol = new TBinaryProtocol(transport_, false, false);
         Cassandra.Client cassandraClient = new Cassandra.Client(binaryProtocol);
 
-        try
-        {
-            transport_.open();
-        }
-        catch(Exception e)
-        {
-            // Should move this to Log4J as well probably...
-            System.err.println("Exception " + e.getMessage());            
-            e.printStackTrace();
-        }
+        transport_.open();
 
         thriftClient_ = cassandraClient;
         cliClient_ = new CliClient(css_, thriftClient_);
@@ -59,12 +50,7 @@ public class CliMain
 
     public static boolean isConnected()
     {
-        if (thriftClient_ == null)
-        {
-            css_.out.println("Not connected to a cassandra instance.");
-            return false;
-        }
-        return true;
+        return (thriftClient_ != null);
     }
     
     private static void processServerQuery(String query)
@@ -72,30 +58,12 @@ public class CliMain
         if (!isConnected())
             return;
 
-        try
-        {
-            cliClient_.executeQueryOnServer(query);
-        }
-        catch(Exception e)
-        {
-            System.err.println("Exception " + e.getMessage());
-            e.printStackTrace(System.err);
-        }
-        return;
+        cliClient_.executeQueryOnServer(query);
     }
 
     private static void processCLIStmt(String query)
     {
-        try
-        {
             cliClient_.executeCLIStmt(query);
-        }
-        catch(Exception e)
-        {
-            System.err.println("Exception " + e.getMessage());
-            e.printStackTrace(System.err);
-        }
-        return;
     }
 
     private static void processLine(String line)

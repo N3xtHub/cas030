@@ -1,39 +1,3 @@
-/**
- * Licensed to the Apache Software Foundation (ASF) under one
- * or more contributor license agreements.  See the NOTICE file
- * distributed with this work for additional information
- * regarding copyright ownership.  The ASF licenses this file
- * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
- * with the License.  You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package org.apache.cassandra.cql.compiler.common;
-
-
-import org.apache.cassandra.cql.common.*;
-import org.apache.cassandra.cql.compiler.parse.*;
-import org.apache.cassandra.cql.compiler.sem.*;
-
-import java.util.ArrayList;
-
-import org.antlr.runtime.*;
-import org.antlr.runtime.tree.*;
-import org.apache.cassandra.cql.common.Plan;
-import org.apache.cassandra.cql.compiler.parse.CqlLexer;
-import org.apache.cassandra.cql.compiler.parse.CqlParser;
-import org.apache.cassandra.cql.compiler.parse.ParseError;
-import org.apache.cassandra.cql.compiler.parse.ParseException;
-import org.apache.cassandra.cql.compiler.sem.SemanticException;
-import org.apache.cassandra.cql.compiler.sem.SemanticPhase;
 
 public class CqlCompiler
 {
@@ -80,14 +44,14 @@ public class CqlCompiler
             errors = new ArrayList<ParseError>();
         }
 
-        protected void mismatch(IntStream input, int ttype, BitSet follow) throws RecognitionException
+        protected void mismatch(IntStream input, int ttype, BitSet follow) 
         {
             throw new MismatchedTokenException(ttype, input);
         }
 
         public Object recoverFromMismatchedSet(IntStream input,
                                              RecognitionException re,
-                                             BitSet follow) throws RecognitionException
+                                             BitSet follow) 
         {
             throw re;
         }
@@ -119,19 +83,8 @@ public class CqlCompiler
         parser = new CqlParserX(tokens);
 
         // built AST
-        try
-        {
-            queryTree = (CommonTree)(parser.root().getTree());
-        }
-        catch (RecognitionException e)
-        {
-            throw new ParseException(parser.getErrors());            
-        }
-        catch (RewriteEmptyStreamException e)
-        {
-            throw new ParseException(parser.getErrors());            
-        }
-
+        queryTree = (CommonTree)(parser.root().getTree());
+        
         if (!parser.getErrors().isEmpty())
         {
             throw new ParseException(parser.getErrors());

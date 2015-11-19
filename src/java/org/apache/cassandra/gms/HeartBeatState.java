@@ -38,11 +38,6 @@ class HeartBeatState
         return serializer_;
     }
     
-    int getGeneration()
-    {
-        return generation_;
-    }
-    
     void updateGeneration()
     {
         ++generation_;

@@ -36,28 +36,17 @@ public class CliCompiler
 
     public static CommonTree compileQuery(String query)
     {
-        CommonTree queryTree = null;
-        try
-        {
-            ANTLRStringStream input = new ANTLRNoCaseStringStream(query);
+        ANTLRStringStream input = new ANTLRNoCaseStringStream(query);
 
-            CliLexer lexer = new CliLexer(input);
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
+        CliLexer lexer = new CliLexer(input);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
 
-            CliParser parser = new CliParser(tokens);
+        CliParser parser = new CliParser(tokens);
 
-            // start parsing...
-            queryTree = (CommonTree)(parser.root().getTree());
+        // start parsing...
+        CommonTree queryTree = (CommonTree)(parser.root().getTree());
 
-            // semantic analysis if any...
-            //  [tbd]
 
-        }
-        catch(Exception e)
-        {
-            System.err.println("Exception " + e.getMessage());
-            e.printStackTrace(System.err);
-        }
         return queryTree;
     }
     /*
@@ -65,22 +54,16 @@ public class CliCompiler
      */
     public static String getTableName(CommonTree astNode)
     {
-        assert(astNode.getType() == CliParser.NODE_COLUMN_ACCESS);
-
         return astNode.getChild(0).getText();
     }
 
     public static String getColumnFamily(CommonTree astNode)
     {
-        assert(astNode.getType() == CliParser.NODE_COLUMN_ACCESS);
-
         return astNode.getChild(1).getText();
     }
 
     public static String getKey(CommonTree astNode)
     {
-        assert(astNode.getType() == CliParser.NODE_COLUMN_ACCESS);
-
         return Utils.unescapeSQLString(astNode.getChild(2).getText());
     }
 

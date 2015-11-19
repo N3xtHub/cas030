@@ -129,14 +129,7 @@ public class AnalyticsContext implements IComponentShutdown
 		tmaxTable_ = getAttributeTable(TMAX_PROPERTY);
 		dmaxTable_ = getAttributeTable(DMAX_PROPERTY);
 
-		try
-		{
-			datagramSocket_ = new DatagramSocket();
-		}
-		catch (SocketException se)
-		{
-			se.printStackTrace();
-		}
+		datagramSocket_ = new DatagramSocket();
 	}
 
 	/**

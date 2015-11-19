@@ -44,16 +44,13 @@ public class Gossiper implements IFailureDetectionEventListener, IEndPointStateC
     }
 
     final static int MAX_GOSSIP_PACKET_SIZE = 1428;
-    /* GS - abbreviation for GOSSIPER_STAGE */
-    final static String GOSSIP_STAGE = "GS";
-    /* GSV - abbreviation for GOSSIP-DIGEST-SYN-VERB */
+    
+    final static String GOSSIP_STAGE = "GS";                /* GS - abbreviation for GOSSIPER_STAGE */
     final static String JOIN_VERB_HANDLER = "JVH";
-    /* GSV - abbreviation for GOSSIP-DIGEST-SYN-VERB */
-    final static String GOSSIP_DIGEST_SYN_VERB = "GSV";
-    /* GAV - abbreviation for GOSSIP-DIGEST-ACK-VERB */
-    final static String GOSSIP_DIGEST_ACK_VERB = "GAV";
-    /* GA2V - abbreviation for GOSSIP-DIGEST-ACK2-VERB */
-    final static String GOSSIP_DIGEST_ACK2_VERB = "GA2V";
+    final static String GOSSIP_DIGEST_SYN_VERB = "GSV";     /* GSV - abbreviation for GOSSIP-DIGEST-SYN-VERB */
+    final static String GOSSIP_DIGEST_ACK_VERB = "GAV";     /* GAV - abbreviation for GOSSIP-DIGEST-ACK-VERB */
+    final static String GOSSIP_DIGEST_ACK2_VERB = "GA2V";   /* GA2V - abbreviation for GOSSIP-DIGEST-ACK2-VERB */
+
     final static int intervalInMillis_ = 1000;
     private static Logger logger_ = Logger.getLogger(Gossiper.class);
     static Gossiper gossiper_;
@@ -96,10 +93,11 @@ public class Gossiper implements IFailureDetectionEventListener, IEndPointStateC
         /* register with the Failure Detector for receiving Failure detector events */
         FailureDetector.instance().registerFailureDetectionEventListener(this);
         /* register the verbs */
-        MessagingService.getMessagingInstance().registerVerbHandlers(JOIN_VERB_HANDLER, new JoinVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(GOSSIP_DIGEST_SYN_VERB, new GossipDigestSynVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(GOSSIP_DIGEST_ACK_VERB, new GossipDigestAckVerbHandler());
-        MessagingService.getMessagingInstance().registerVerbHandlers(GOSSIP_DIGEST_ACK2_VERB, new GossipDigestAck2VerbHandler());
+        MessagingService.getMessagingInstance().registerVerbHandlers(
+            JOIN_VERB_HANDLER, new JoinVerbHandler());
+            GOSSIP_DIGEST_SYN_VERB, new GossipDigestSynVerbHandler());
+            GOSSIP_DIGEST_ACK_VERB, new GossipDigestAckVerbHandler());
+            GOSSIP_DIGEST_ACK2_VERB, new GossipDigestAck2VerbHandler());
         /* register the Gossip stage */
         StageManager.registerStage( Gossiper.GOSSIP_STAGE, new SingleThreadedStage("GMFD") );
         /* register with Storage Service for shutdown */
@@ -304,7 +302,7 @@ public class Gossiper implements IFailureDetectionEventListener, IEndPointStateC
     	return endPointStateMap_.get(endpoint).getHeartBeatState().getGeneration();
     }
 
-    Message makeGossipDigestSynMessage(List<GossipDigest> gDigests) throws IOException
+    Message makeGossipDigestSynMessage(List<GossipDigest> gDigests)
     {
         GossipDigestSynMessage gDigestMessage = new GossipDigestSynMessage(DatabaseDescriptor.getClusterName(), gDigests);
         ByteArrayOutputStream bos = new ByteArrayOutputStream(Gossiper.MAX_GOSSIP_PACKET_SIZE);
@@ -314,17 +312,17 @@ public class Gossiper implements IFailureDetectionEventListener, IEndPointStateC
         return message;
     }
 
-    Message makeGossipDigestAckMessage(GossipDigestAckMessage gDigestAckMessage) throws IOException
+    Message makeGossipDigestAckMessage(GossipDigestAckMessage gDigestAckMessage)
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(Gossiper.MAX_GOSSIP_PACKET_SIZE);
         DataOutputStream dos = new DataOutputStream(bos);
         GossipDigestAckMessage.serializer().serialize(gDigestAckMessage, dos);
-        logger_.trace("@@@@ Size of GossipDigestAckMessage is " + bos.toByteArray().length);
+
         Message message = new Message(localEndPoint_, Gossiper.GOSSIP_STAGE, GOSSIP_DIGEST_ACK_VERB, bos.toByteArray());
         return message;
     }
 
-    Message makeGossipDigestAck2Message(GossipDigestAck2Message gDigestAck2Message) throws IOException
+    Message makeGossipDigestAck2Message(GossipDigestAck2Message gDigestAck2Message)
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream(Gossiper.MAX_GOSSIP_PACKET_SIZE);
         DataOutputStream dos = new DataOutputStream(bos);
