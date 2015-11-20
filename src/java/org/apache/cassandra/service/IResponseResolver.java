@@ -9,7 +9,7 @@ public interface IResponseResolver<T> {
 	 * repairs . Hence you need to derive a response resolver based on your
 	 * needs from this interface.
 	 */
-	public T resolve(List<Message> responses) throws DigestMismatchException;
+	public T resolve(List<Message> responses);
 	public boolean isDataPresent(List<Message> responses);
 
 }

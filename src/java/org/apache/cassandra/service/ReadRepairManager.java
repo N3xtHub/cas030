@@ -9,9 +9,8 @@
  */
 class ReadRepairManager
 {
- 	private static final long expirationTimeInMillis = 2000;
-	private static Lock lock_ = new ReentrantLock();
-	private static ReadRepairManager self_ = null;
+ 	private static final long expirationTimeInMillis = 2000;	
+ 	private static ReadRepairManager self_ = null;
 
 	/*
 	 * This is the internal class which actually
@@ -24,8 +23,7 @@ class ReadRepairManager
 		 * needs to be sent to the end point in order 
 		 * to perform read repair.
 		 */
-		public void callMe(String target,
-				Message message)
+		public void callMe(String target, Message message)
 		{
 			String[] pieces = FBUtilities.strip(target, ":");
 			EndPoint to = new EndPoint(pieces[0], Integer.parseInt(pieces[1]));
@@ -37,9 +35,6 @@ class ReadRepairManager
 	private ICachetable<String, Message> readRepairTable_ 
         = new Cachetable<String, Message>(expirationTimeInMillis, new ReadRepairManager.ReadRepairPerformer());
 
-	protected ReadRepairManager()
-	{
-	}
 
 	public  static ReadRepairManager instance()
 	{

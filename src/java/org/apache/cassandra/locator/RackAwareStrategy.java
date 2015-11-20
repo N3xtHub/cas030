@@ -70,10 +70,6 @@ public class RackAwareStrategy extends AbstractStrategy
                     }
                 }
             }
-            catch (UnknownHostException e)
-            {
-                logger_.debug(LogUtil.throwableToString(e));
-            }
 
         }
         // If we found N number of nodes we are good. This loop wil just exit. Otherwise just
@@ -104,6 +100,6 @@ public class RackAwareStrategy extends AbstractStrategy
 
     public EndPoint[] getStorageEndPoints(Token token, Map<Token, EndPoint> tokenToEndPointMap)
     {
-        throw new UnsupportedOperationException("This operation is not currently supported");
+        throw new UnsupportedOperationException("");
     }
 }

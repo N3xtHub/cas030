@@ -2,8 +2,9 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
 { 
     private Lock lock_ = new ReentrantLock();
     private Condition condition_;
-    /* This maps the keys to the original data read messages */
-    private Map<String, ReadCommand> readMessages_ = new HashMap<String, ReadCommand>();
+
+    // maps keys to original data read messages
+    private Map<String, ReadCommand> readMessages_ = new HashMap<String, ReadCommand>(); 
     /* This maps the key to its set of replicas */
     private Map<String, EndPoint[]> endpoints_ = new HashMap<String, EndPoint[]>();
     /* This maps the groupId to the individual callback for the set of messages */
@@ -28,14 +29,9 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
             responseResolver_ = responseResolver;
         }
         
-        public void attachContext(Object o)
-        {
-            throw new UnsupportedOperationException();
-        }
-        
         public void response(Message response)
         {
-            lock_.lock();
+            lock_.lock()
             {
                 responses_.add(response);
                 int majority = (DatabaseDescriptor.getReplicationFactor() >> 1) + 1;                            
@@ -59,7 +55,7 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
          * 
          * @param key for which the mismatch occured.
         */
-        private void onDigestMismatch(String key) throws IOException
+        private void onDigestMismatch(String key) 
         {
             if ( DatabaseDescriptor.getConsistencyCheck())
             {                                
@@ -81,25 +77,14 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
         endpoints_ = endpoints;
     }
     
-    public Row[] get() throws TimeoutException
+    public Row[] get()
     {
         lock_.lock()
         {            
             boolean bVal = true;            
             if ( !done_.get() )
             {                   
-                bVal = condition_.await(DatabaseDescriptor.getRpcTimeout(), TimeUnit.MILLISECONDS);
-            }
-            
-            if ( !bVal && !done_.get() )
-            {
-                StringBuilder sb = new StringBuilder("");
-                for ( Row row : responses_ )
-                {
-                    sb.append(row.key());
-                    sb.append(":");
-                }                
-                throw new TimeoutException("Operation timed out - received only " +  responses_.size() + " responses from " + sb.toString() + " .");
+                bVal = condition_.await(DatabaseDescriptor.getRpcTimeout());
             }
         }
         

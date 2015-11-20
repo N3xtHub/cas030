@@ -1,6 +1,5 @@
 public class CustomLoader
 {
-    private static Logger logger_ = Logger.getLogger( CustomLoader.class );
     private StorageService storageService_;
     private String path_;
     

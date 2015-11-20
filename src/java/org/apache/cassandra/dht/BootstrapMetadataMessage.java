@@ -19,7 +19,7 @@ class BootstrapMetadataMessage
         return serializer_;
     }
     
-    protected static Message makeBootstrapMetadataMessage(BootstrapMetadataMessage bsMetadataMessage) throws IOException
+    protected static Message makeBootstrapMetadataMessage(BootstrapMetadataMessage bsMetadataMessage) 
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream( bos );
@@ -37,7 +37,7 @@ class BootstrapMetadataMessage
 
 class BootstrapMetadataMessageSerializer implements ICompactSerializer<BootstrapMetadataMessage>
 {
-    public void serialize(BootstrapMetadataMessage bsMetadataMessage, DataOutputStream dos) throws IOException
+    public void serialize(BootstrapMetadataMessage bsMetadataMessage, DataOutputStream dos) 
     {
         BootstrapMetadata[] bsMetadata = bsMetadataMessage.bsMetadata_;
         int size = (bsMetadata == null) ? 0 : bsMetadata.length;
@@ -48,7 +48,7 @@ class BootstrapMetadataMessageSerializer implements ICompactSerializer<Bootstrap
         }
     }
 
-    public BootstrapMetadataMessage deserialize(DataInputStream dis) throws IOException
+    public BootstrapMetadataMessage deserialize(DataInputStream dis) 
     {            
         int size = dis.readInt();
         BootstrapMetadata[] bsMetadata = new BootstrapMetadata[size];

@@ -25,23 +25,6 @@ public class Range implements Comparable<Range>
         right_ = right;
     }
 
-    /**
-     * Returns the left endpoint of a range.
-     * @return left endpoint
-     */
-    public Token left()
-    {
-        return left_;
-    }
-    
-    /**
-     * Returns the right endpoint of a range.
-     * @return right endpoint
-     */
-    public Token right()
-    {
-        return right_;
-    }
 
     /**
      * Helps determine if a given point on the DHT ring is contained
@@ -139,13 +122,13 @@ public class Range implements Comparable<Range>
 
 class RangeSerializer implements ICompactSerializer<Range>
 {
-    public void serialize(Range range, DataOutputStream dos) throws IOException
+    public void serialize(Range range, DataOutputStream dos) 
     {
         Token.serializer().serialize(range.left(), dos);
         Token.serializer().serialize(range.right(), dos);
     }
 
-    public Range deserialize(DataInputStream dis) throws IOException
+    public Range deserialize(DataInputStream dis) 
     {
         return new Range(Token.serializer().deserialize(dis), Token.serializer().deserialize(dis));
     }

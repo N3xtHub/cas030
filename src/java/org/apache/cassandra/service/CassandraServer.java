@@ -89,22 +89,19 @@ public class CassandraServer implements Cassandra.Iface
     {
         String[] values = RowMutation.getColumnAndColumnFamily(columnParent);
         ColumnFamily cfamily = readColumnFamily(new SliceReadCommand(tablename, key, columnParent, start, count));
-        if (cfamily == null)
-        {
-            return EMPTY_COLUMNS;
-        }
+  
         Collection<IColumn> columns = null;
         if( values.length > 1 )
         {
             // this is the super column case
             IColumn column = cfamily.getColumn(values[1]);
-            if(column != null)
-                columns = column.getSubColumns();
+            columns = column.getSubColumns();
         }
         else
         {
             columns = cfamily.getAllColumns();
         }
+
         return thriftifyColumns(columns);
 	}
     
@@ -119,8 +116,7 @@ public class CassandraServer implements Cassandra.Iface
         {
             // this is the super column case
             IColumn column = cfamily.getColumn(values[1]);
-            if(column != null)
-                columns = column.getSubColumns();
+            columns = column.getSubColumns();
         }
         else
         {

@@ -52,26 +52,12 @@ public class OrderPreservingPartitioner implements IPartitioner
     private final Token.TokenFactory<String> tokenFactory = new Token.TokenFactory<String>() {
         public byte[] toByteArray(Token<String> stringToken)
         {
-            try
-            {
-                return stringToken.token.getBytes("UTF-8");
-            }
-            catch (UnsupportedEncodingException e)
-            {
-                throw new RuntimeException(e);
-            }
+            return stringToken.token.getBytes("UTF-8");
         }
 
         public Token<String> fromByteArray(byte[] bytes)
         {
-            try
-            {
-                return new StringToken(new String(bytes, "UTF-8"));
-            }
-            catch (UnsupportedEncodingException e)
-            {
-                throw new RuntimeException(e);
-            }
+            return new StringToken(new String(bytes, "UTF-8"));
         }
 
         public String toString(Token<String> stringToken)

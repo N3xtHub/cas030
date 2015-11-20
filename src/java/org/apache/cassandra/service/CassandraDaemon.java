@@ -19,6 +19,7 @@ public class CassandraDaemon
                
         CassandraServer peerStorageServer = new CassandraServer();
         peerStorageServer.start();
+        
         Cassandra.Processor processor = new Cassandra.Processor(peerStorageServer);
 
         TServerSocket tServerSocket = new TServerSocket(new InetSocketAddress(FBUtilities.getHostAddress(), listenPort));

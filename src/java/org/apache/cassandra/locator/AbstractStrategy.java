@@ -6,21 +6,12 @@
 */
 public abstract class AbstractStrategy implements IReplicaPlacementStrategy
 {
-    protected static Logger logger_ = Logger.getLogger(AbstractStrategy.class);
-
     protected TokenMetadata tokenMetadata_;
     protected IPartitioner partitioner_;
     protected int replicas_;
     protected int storagePort_;
 
-    AbstractStrategy(TokenMetadata tokenMetadata, IPartitioner partitioner, int replicas, int storagePort)
-    {
-        tokenMetadata_ = tokenMetadata;
-        partitioner_ = partitioner;
-        replicas_ = replicas;
-        storagePort_ = storagePort;
-    }
-
+ 
     /*
      * This method changes the ports of the endpoints from
      * the control port to the storage ports.
@@ -52,7 +43,8 @@ public abstract class AbstractStrategy implements IReplicaPlacementStrategy
         for (int i = startIndex, count = 1; count < totalNodes ; ++count, i = (i+1)%totalNodes)
         {
             EndPoint tmpEndPoint = tokenToEndPointMap.get(tokens.get(i));
-            if(FailureDetector.instance().isAlive(tmpEndPoint) && !topN.contains(tmpEndPoint) && !liveNodes.contains(tmpEndPoint))
+            if(FailureDetector.instance().isAlive(tmpEndPoint) 
+                && !topN.contains(tmpEndPoint) && !liveNodes.contains(tmpEndPoint))
             {
                 endPoint = tmpEndPoint;
                 break;
@@ -87,11 +79,6 @@ public abstract class AbstractStrategy implements IReplicaPlacementStrategy
                 {
                     map.put(endPoint, topN[i]);
                     liveList.add(endPoint) ;
-                }
-                else
-                {
-                    // log a warning , maybe throw an exception
-                    logger_.warn("Unable to find a live Endpoint we might be out of live nodes , This is dangerous !!!!");
                 }
             }
         }

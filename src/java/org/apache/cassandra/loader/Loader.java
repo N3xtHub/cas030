@@ -9,8 +9,7 @@
 public class Loader
 {
 	private static long siesta_ = 60*1000;
-    private static Logger logger_ = Logger.getLogger( Loader.class );
-	private Importer importer_;
+    private Importer importer_;
     private StorageService storageService_;
     
     public Loader(StorageService storageService)
@@ -187,10 +186,7 @@ public class Loader
         for(String pKey : keys)
         {
         	rm = rms.get(pKey);
-        	if( rm != null)
-        	{
-        		rm.apply();
-        	}
+        	rm.apply();
         }
     }
     

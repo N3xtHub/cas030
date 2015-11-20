@@ -5,8 +5,6 @@
 */
 public final class StreamManager
 {   
-    private static Logger logger_ = Logger.getLogger( StreamManager.class );
-    
     public static class BootstrapTerminateVerbHandler implements IVerbHandler
     {
         private static Logger logger_ = Logger.getLogger( BootstrapInitiateDoneVerbHandler.class );

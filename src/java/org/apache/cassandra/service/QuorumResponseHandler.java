@@ -29,20 +29,10 @@ public class QuorumResponseHandler<T> implements IAsyncCallback
         
         	if ( !done_.get() )
             {            		
-        		bVal = condition_.await(DatabaseDescriptor.getRpcTimeout(), TimeUnit.MILLISECONDS);
-            }
-                
-            if ( !bVal && !done_.get() )
-            {
-                StringBuilder sb = new StringBuilder("");
-                for ( Message message : responses_ )
-                {
-                    sb.append(message.getFrom());                    
-                }                
-                throw new TimeoutException("Operation timed out - received only " +  responses_.size() + " responses from " + sb.toString() + " .");
+        		bVal = condition_.await(DatabaseDescriptor.getRpcTimeout());
             }
      
-         lock_.unlock();
+            lock_.unlock();
             for(Message response : responses_)
             {
             	MessagingService.removeRegisteredCallback( response.getMessageId() );
@@ -67,10 +57,5 @@ public class QuorumResponseHandler<T> implements IAsyncCallback
             	}
             }
         }
-    }
-    
-    public void attachContext(Object o)
-    {
-        throw new UnsupportedOperationException();
     }
 }

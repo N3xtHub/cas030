@@ -171,10 +171,7 @@ public class DatabaseDescriptor
             String memtableObjectCount = xmlUtils.getNodeValue("/Storage/MemtableObjectCountInMillions");
             if ( memtableObjectCount != null )
                 memtableObjectCount_ = Double.parseDouble(memtableObjectCount);
-            if (memtableObjectCount_ <= 0)
-            {
-                throw new ConfigurationException("Memtable object count must be a positive double");
-            }
+
 
             /* This parameter enables or disables consistency checks.
              * If set to false the read repairs are disable for very
@@ -196,10 +193,6 @@ public class DatabaseDescriptor
 
             /* metadata directory */
             metadataDirectory_ = xmlUtils.getNodeValue("/Storage/MetadataDirectory");
-            if (metadataDirectory_ == null)
-            {
-                throw new ConfigurationException("MetadataDirectory must be specified");
-            }
             FileUtils.createDirectory(metadataDirectory_);
 
             /* snapshot directory */
@@ -213,27 +206,16 @@ public class DatabaseDescriptor
 
             /* data file directory */
             dataFileDirectories_ = xmlUtils.getNodeValues("/Storage/DataFileDirectories/DataFileDirectory");
-            if (dataFileDirectories_.length == 0)
-            {
-                throw new ConfigurationException("At least one DataFileDirectory must be specified");
-            }
             for ( String dataFileDirectory : dataFileDirectories_ )
                 FileUtils.createDirectory(dataFileDirectory);
 
             /* bootstrap file directory */
             bootstrapFileDirectory_ = xmlUtils.getNodeValue("/Storage/BootstrapFileDirectory");
-            if (bootstrapFileDirectory_ == null)
-            {
-                throw new ConfigurationException("BootstrapFileDirectory must be specified");
-            }
             FileUtils.createDirectory(bootstrapFileDirectory_);
 
             /* commit log directory */
             logFileDirectory_ = xmlUtils.getNodeValue("/Storage/CommitLogDirectory");
-            if (logFileDirectory_ == null)
-            {
-                throw new ConfigurationException("CommitLogDirectory must be specified");
-            }
+
             FileUtils.createDirectory(logFileDirectory_);
 
             /* threshold after which commit log should be rotated. */
@@ -262,10 +244,7 @@ public class DatabaseDescriptor
 
                 /* parsing out the table name */
                 String tName = XMLUtils.getAttributeValue(table, "Name");
-                if (tName == null)
-                {
-                    throw new ConfigurationException("Table name attribute is required");
-                }
+
                 tables_.add(tName);
                 tableToCFMetaDataMap_.put(tName, new HashMap<String, CFMetaData>());
 
@@ -284,10 +263,6 @@ public class DatabaseDescriptor
                 {
                     Node columnFamily = columnFamilies.item(j);
                     String cName = XMLUtils.getAttributeValue(columnFamily, "Name");
-                    if (cName == null)
-                    {
-                        throw new ConfigurationException("ColumnFamily name attribute is required");
-                    }
                     String xqlCF = xqlTable + "ColumnFamily[@Name='" + cName + "']/";
 
                     /* squirrel away the application column families */
@@ -296,10 +271,6 @@ public class DatabaseDescriptor
                     // Parse out the column type
                     String rawColumnType = XMLUtils.getAttributeValue(columnFamily, "ColumnType");
                     String columnType = ColumnFamily.getColumnType(rawColumnType);
-                    if (columnType == null)
-                    {
-                        throw new ConfigurationException("Column " + cName + " has invalid type " + rawColumnType);
-                    }
 
                     // Parse out the column family sorting property for columns
                     String rawColumnIndexType = XMLUtils.getAttributeValue(columnFamily, "ColumnSort");

@@ -36,23 +36,21 @@ public class ReadResponseResolver implements IResponseResolver<Row>
 		{					            
             byte[] body = response.getMessageBody();
             bufIn.reset(body, body.length);
-            try
-            {
-                long start = System.currentTimeMillis();
-                ReadResponse result = ReadResponse.serializer().deserialize(bufIn);
-                if(!result.isDigestQuery())
-    			{
-    				rowList.add(result.row());
-    				endPoints.add(response.getFrom());
-    				key = result.row().key();
-    				table = result.table();
-    			}
-    			else
-    			{
-    				digest = result.digest();
-    				isDigestQuery = true;
-    			}
-            }
+       
+            long start = System.currentTimeMillis();
+            ReadResponse result = ReadResponse.serializer().deserialize(bufIn);
+            if(!result.isDigestQuery())
+			{
+				rowList.add(result.row());
+				endPoints.add(response.getFrom());
+				key = result.row().key();
+				table = result.table();
+			}
+			else
+			{
+				digest = result.digest();
+				isDigestQuery = true;
+			}
 		}
 		// If there was a digest query compare it with all the data digests 
 		// If there is a mismatch then throw an exception so that read repair can happen.

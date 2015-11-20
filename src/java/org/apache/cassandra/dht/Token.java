@@ -50,7 +50,7 @@ public abstract class Token<T extends Comparable> implements Comparable<Token<T>
 
     public static class TokenSerializer implements ICompactSerializer<Token>
     {
-        public void serialize(Token token, DataOutputStream dos) throws IOException
+        public void serialize(Token token, DataOutputStream dos) 
         {
             IPartitioner p = StorageService.getPartitioner();
             byte[] b = p.getTokenFactory().toByteArray(token);
@@ -58,7 +58,7 @@ public abstract class Token<T extends Comparable> implements Comparable<Token<T>
             dos.write(b);
         }
 
-        public Token deserialize(DataInputStream dis) throws IOException
+        public Token deserialize(DataInputStream dis) 
         {
             IPartitioner p = StorageService.getPartitioner();
             int size = dis.readInt();

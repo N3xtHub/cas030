@@ -39,10 +39,7 @@ public class TokenMetadata
         }
     }
     
-    /**
-     * Remove the entries in the two maps.
-     * @param endpoint
-     */
+    // Remove the entries in the two maps.
     public void remove(EndPoint endpoint)
     {
         lock_.writeLock().lock()
@@ -56,27 +53,17 @@ public class TokenMetadata
     
     public Token getToken(EndPoint endpoint)
     {
-        lock_.readLock().lock();
-        try
+        lock_.readLock().lock()
         {
             return endPointToTokenMap_.get(endpoint);
-        }
-        finally
-        {
-            lock_.readLock().unlock();
         }
     }
     
     public boolean isKnownEndPoint(EndPoint ep)
     {
-        lock_.readLock().lock();
-        try
+        lock_.readLock().lock()
         {
             return endPointToTokenMap_.containsKey(ep);
-        }
-        finally
-        {
-            lock_.readLock().unlock();
         }
     }
     
@@ -85,14 +72,9 @@ public class TokenMetadata
     */
     public Map<Token, EndPoint> cloneTokenEndPointMap()
     {
-        lock_.readLock().lock();
-        try
+        lock_.readLock().lock()
         {            
             return new HashMap<Token, EndPoint>( tokenToEndPointMap_ );
-        }
-        finally
-        {
-            lock_.readLock().unlock();
         }
     }
     
@@ -102,21 +84,5 @@ public class TokenMetadata
     public Map<EndPoint, Token> cloneEndPointTokenMap()
     {
         return new HashMap<EndPoint, Token>( endPointToTokenMap_ );
-    }
-    
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        Set<EndPoint> eps = endPointToTokenMap_.keySet();
-        
-        for ( EndPoint ep : eps )
-        {
-            sb.append(ep);
-            sb.append(":");
-            sb.append(endPointToTokenMap_.get(ep));
-            sb.append(System.getProperty("line.separator"));
-        }
-        
-        return sb.toString();
     }
 }
