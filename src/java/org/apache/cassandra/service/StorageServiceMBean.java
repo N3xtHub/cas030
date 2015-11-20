@@ -17,9 +17,6 @@ public interface StorageServiceMBean
     */
     public void loadAll(String nodes);
     
-    /**
-     * 
-     */
     public void doGC();
 
     /**

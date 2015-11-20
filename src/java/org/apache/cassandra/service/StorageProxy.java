@@ -1,9 +1,7 @@
 
 public class StorageProxy implements StorageProxyMBean
 {
-    private static Logger logger = Logger.getLogger(StorageProxy.class);
-
-    // mbean stuff
+    
     private static TimedStatsDeque readStats = new TimedStatsDeque(60000);
     private static TimedStatsDeque rangeStats = new TimedStatsDeque(60000);
     private static TimedStatsDeque writeStats = new TimedStatsDeque(60000);
@@ -29,7 +27,7 @@ public class StorageProxy implements StorageProxyMBean
 		{
             EndPoint target = entry.getKey();
             EndPoint hint = entry.getValue();
-            if ( !target.equals(hint) )
+            if ( target != hint )
 			{
 				Message hintedMessage = rm.makeRowMutationMessage();
 				hintedMessage.addHeader(RowMutation.HINT, EndPoint.toBytes(hint) );
@@ -84,8 +82,7 @@ public class StorageProxy implements StorageProxyMBean
                 DatabaseDescriptor.getReplicationFactor(),
                 new WriteResponseResolver());
         EndPoint[] endpoints = StorageService.instance().getNStorageEndPoint(rm.key());
-        logger.debug("insertBlocking writing key " + rm.key() + " to " + message.getMessageId() + "@[" + StringUtils.join(endpoints, ", ") + "]");
-      
+        
         MessagingService.getMessagingInstance().sendRR(message, endpoints, quorumResponseHandler);
         if (!quorumResponseHandler.get())
             throw new UnavailableException();
@@ -130,7 +127,7 @@ public class StorageProxy implements StorageProxyMBean
      * @throws IOException
      * @throws TimeoutException
      */
-    public static Map<String, Row> doReadProtocol(Map<String, ReadCommand> readMessages) throws IOException,TimeoutException
+    public static Map<String, Row> doReadProtocol(Map<String, ReadCommand> readMessages) 
     {
         Map<String, Row> rows = new HashMap<String, Row>();
         Set<String> keys = readMessages.keySet();
@@ -160,7 +157,7 @@ public class StorageProxy implements StorageProxyMBean
      * @return the row associated with command.key
      * @throws Exception
      */
-    private static Row weakReadRemote(ReadCommand command) throws IOException
+    private static Row weakReadRemote(ReadCommand command)
     {
         EndPoint endPoint = StorageService.instance().findSuitableEndPoint(command.key);
         assert endPoint != null;
@@ -230,17 +227,6 @@ public class StorageProxy implements StorageProxyMBean
         return rows;
     }
 
-    /**
-     * This is a multiget version of the above method.
-     * @param tablename
-     * @param keys
-     * @param columnFamily
-     * @param start
-     * @param count
-     * @return
-     * @throws IOException
-     * @throws TimeoutException
-     */
     public static Map<String, Row> strongReadProtocol(String[] keys, ReadCommand readCommand) 
     {       
         Map<String, Row> rows;
@@ -490,24 +476,16 @@ public class StorageProxy implements StorageProxyMBean
     static List<String> getKeyRange(RangeCommand command)
     {
         long startTime = System.currentTimeMillis();
-        try
-        {
-            EndPoint endPoint = StorageService.instance().findSuitableEndPoint(command.startWith);
-            IAsyncResult iar = MessagingService.getMessagingInstance().sendRR(command.getMessage(), endPoint);
 
-            // read response
-            // TODO send more requests if we need to span multiple nodes
-            byte[] responseBody = iar.get(DatabaseDescriptor.getRpcTimeout(), TimeUnit.MILLISECONDS);
-            return RangeReply.read(responseBody).keys;
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("error reading keyrange " + command, e);
-        }
-        finally
-        {
-            rangeStats.add(System.currentTimeMillis() - startTime);
-        }
+        EndPoint endPoint = StorageService.instance().findSuitableEndPoint(command.startWith);
+        IAsyncResult iar = MessagingService.getMessagingInstance().sendRR(command.getMessage(), endPoint);
+
+        // read response
+        // TODO send more requests if we need to span multiple nodes
+        byte[] responseBody = iar.get(DatabaseDescriptor.getRpcTimeout(), TimeUnit.MILLISECONDS);
+        return RangeReply.read(responseBody).keys;
+
+        rangeStats.add(System.currentTimeMillis() - startTime);
     }
 
     public double getReadLatency()

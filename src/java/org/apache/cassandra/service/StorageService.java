@@ -141,7 +141,7 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
     {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         mbs.registerMBean(this, new ObjectName(
-                    "cassandra.service:type=StorageService"));
+                    "service:type=StorageService"));
     }
 
     public StorageService()
@@ -428,9 +428,7 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
             }
             else
             {
-                /*
-                 * This is a new node and we just update the token map.
-                */
+                // This is a new node and we just update the token map.
                 tokenMetadata_.update(newToken, ep);
             }
         }
@@ -449,14 +447,8 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
 
         /* Check if a bootstrap is in order */
         ApplicationState loadAllState = epState.getApplicationState(StorageService.loadAll_);
-        if ( loadAllState != null )
-        {
-            String nodes = loadAllState.getState();
-            if ( nodes != null )
-            {
-                doBootstrap(ep, BootstrapMode.FULL);
-            }
-        }
+        String nodes = loadAllState.getState();
+        doBootstrap(ep, BootstrapMode.FULL);
     }
 
     /**
