@@ -8,12 +8,8 @@ public class BootstrapInitiateMessage implements Serializable
         serializer_ = new BootstrapInitiateMessageSerializer();
     }
     
-    public static ICompactSerializer<BootstrapInitiateMessage> serializer()
-    {
-        return serializer_;
-    }
     
-    public static Message makeBootstrapInitiateMessage(BootstrapInitiateMessage biMessage) throws IOException
+    public static Message makeBootstrapInitiateMessage(BootstrapInitiateMessage biMessage) 
     {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream( bos );
@@ -34,30 +30,4 @@ public class BootstrapInitiateMessage implements Serializable
     }
 }
 
-class BootstrapInitiateMessageSerializer implements ICompactSerializer<BootstrapInitiateMessage>
-{
-    public void serialize(BootstrapInitiateMessage bim, DataOutputStream dos) throws IOException
-    {
-        dos.writeInt(bim.streamContexts_.length);
-        for ( StreamContextManager.StreamContext streamContext : bim.streamContexts_ )
-        {
-            StreamContextManager.StreamContext.serializer().serialize(streamContext, dos);
-        }
-    }
-    
-    public BootstrapInitiateMessage deserialize(DataInputStream dis) throws IOException
-    {
-        int size = dis.readInt();
-        StreamContextManager.StreamContext[] streamContexts = new StreamContextManager.StreamContext[0];
-        if ( size > 0 )
-        {
-            streamContexts = new StreamContextManager.StreamContext[size];
-            for ( int i = 0; i < size; ++i )
-            {
-                streamContexts[i] = StreamContextManager.StreamContext.serializer().deserialize(dis);
-            }
-        }
-        return new BootstrapInitiateMessage(streamContexts);
-    }
-}
 

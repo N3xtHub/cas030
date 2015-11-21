@@ -7,12 +7,13 @@
  */
 public class FailureDetector implements IFailureDetector, FailureDetectorMBean
 {
-    private static Logger logger_ = Logger.getLogger(FailureDetector.class);
     private static final int sampleSize_ = 1000;
     private static final int phiSuspectThreshold_ = 5;
     private static final int phiConvictThreshold_ = 8;
+
     /* The Failure Detector has to have been up for atleast 1 min. */
-    private static final long uptimeThreshold_ = 60000;
+    private static final long uptimeThreshold_ = 60000; // one minute
+
     private static IFailureDetector failureDetector_;
     /* Used to lock the factory for creation of FailureDetector instance */
     private static Lock createLock_ = new ReentrantLock();
@@ -34,7 +35,7 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
         creationTime_ = System.currentTimeMillis();
         // Register this instance with JMX
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        mbs.registerMBean(this, new ObjectName("org.apache.cassandra.gms:type=FailureDetector"));
+        mbs.registerMBean(this, new ObjectName("cassandra.gms:type=FailureDetector"));
     }
     
     public void dumpInterArrivalTimes()
@@ -78,7 +79,6 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
     
     public void report(EndPoint ep)
     {
-        logger_.trace("reporting " + ep);
         long now = System.currentTimeMillis();
         ArrivalWindow heartbeatWindow = arrivalSamples_.get(ep);
         if ( heartbeatWindow == null )
@@ -93,10 +93,6 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
     public void intepret(EndPoint ep)
     {
         ArrivalWindow hbWnd = arrivalSamples_.get(ep);
-        if ( hbWnd == null )
-        {            
-            return;
-        }
 
         long now = System.currentTimeMillis();
         /* We need this so that we do not suspect a convict. */
@@ -121,31 +117,10 @@ public class FailureDetector implements IFailureDetector, FailureDetectorMBean
     {
         fdEvntListeners_.remove(listener);
     }
-    
-    public String toString()
-    {
-        StringBuilder sb = new StringBuilder();
-        Set<EndPoint> eps = arrivalSamples_.keySet();
-        
-        for ( EndPoint ep : eps )
-        {
-            ArrivalWindow hWnd = arrivalSamples_.get(ep);
-            sb.append(ep + " : ");
-            sb.append(hWnd.toString());
-            sb.append( System.getProperty("line.separator") );
-        }
-        
-        return sb.toString();
-    }
-    
-    public static void main(String[] args) throws Throwable
-    {           
-    }
 }
 
 class ArrivalWindow
 {
-    private static Logger logger_ = Logger.getLogger(ArrivalWindow.class);
     private double tLast_ = 0L;
     private BoundedStatsDeque arrivalIntervals_;
     private int size_;
@@ -220,10 +195,5 @@ class ArrivalWindow
         }
         return log;           
     } 
-    
-    public String toString()
-    {
-        return StringUtils.join(arrivalIntervals_.iterator(), " ");
-    }
 }
 

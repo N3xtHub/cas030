@@ -5,8 +5,6 @@
 */
 public class BootstrapMetadataVerbHandler implements IVerbHandler
 {
-    private static Logger logger_ = Logger.getLogger(BootstrapMetadataVerbHandler.class);
-    
     public void doVerb(Message message)
     {
         logger_.debug("Received a BootstrapMetadataMessage from " + message.getFrom());
