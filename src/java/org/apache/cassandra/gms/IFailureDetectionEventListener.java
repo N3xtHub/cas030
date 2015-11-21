@@ -1,8 +1,3 @@
-/**
- * Implemented by the Gossiper to either convict/suspect an endpoint
- * based on the PHI calculated by the Failure Detector on the inter-arrival
- * times of the heart beats.
- */
 
 public interface IFailureDetectionEventListener
 {  

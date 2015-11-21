@@ -1,13 +1,7 @@
 
 public class BootstrapInitiateMessage implements Serializable
 {
-    private static ICompactSerializer<BootstrapInitiateMessage> serializer_;
-    
-    static
-    {
-        serializer_ = new BootstrapInitiateMessageSerializer();
-    }
-    
+    private static ICompactSerializer<BootstrapInitiateMessage> serializer_ = new BootstrapInitiateMessageSerializer();
     
     public static Message makeBootstrapInitiateMessage(BootstrapInitiateMessage biMessage) 
     {
@@ -18,16 +12,6 @@ public class BootstrapInitiateMessage implements Serializable
     }
     
     protected StreamContextManager.StreamContext[] streamContexts_ = new StreamContextManager.StreamContext[0];
-   
-    public BootstrapInitiateMessage(StreamContextManager.StreamContext[] streamContexts)
-    {
-        streamContexts_ = streamContexts;
-    }
-    
-    public StreamContextManager.StreamContext[] getStreamContext()
-    {
-        return streamContexts_;
-    }
 }
 
 
