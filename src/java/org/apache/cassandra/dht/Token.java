@@ -2,10 +2,6 @@
 public abstract class Token<T extends Comparable> implements Comparable<Token<T>>
 {
     private static final TokenSerializer serializer = new TokenSerializer();
-    public static TokenSerializer serializer()
-    {
-        return serializer;
-    }
 
     T token;
 
@@ -22,11 +18,6 @@ public abstract class Token<T extends Comparable> implements Comparable<Token<T>
         return token.compareTo(o.token);
     }
 
-    public String toString()
-    {
-        return "Token(" + token + ")";
-    }
-
     public boolean equals(Object obj)
     {
         if (!(obj instanceof Token)) {
@@ -35,36 +26,11 @@ public abstract class Token<T extends Comparable> implements Comparable<Token<T>
         return token.equals(((Token)obj).token);
     }
 
-    public int hashCode()
-    {
-        return token.hashCode();
-    }
-
     public static abstract class TokenFactory<T extends Comparable>
     {
         public abstract byte[] toByteArray(Token<T> token);
         public abstract Token<T> fromByteArray(byte[] bytes);
         public abstract String toString(Token<T> token); // serialize as string, not necessarily human-readable
         public abstract Token<T> fromString(String string); // deserialize
-    }
-
-    public static class TokenSerializer implements ICompactSerializer<Token>
-    {
-        public void serialize(Token token, DataOutputStream dos) 
-        {
-            IPartitioner p = StorageService.getPartitioner();
-            byte[] b = p.getTokenFactory().toByteArray(token);
-            dos.writeInt(b.length);
-            dos.write(b);
-        }
-
-        public Token deserialize(DataInputStream dis) 
-        {
-            IPartitioner p = StorageService.getPartitioner();
-            int size = dis.readInt();
-            byte[] bytes = new byte[size];
-            dis.readFully(bytes);
-            return p.getTokenFactory().fromByteArray(bytes);
-        }
     }
 }

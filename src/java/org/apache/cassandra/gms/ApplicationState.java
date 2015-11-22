@@ -15,26 +15,11 @@
 
 public class ApplicationState
 {
-    private static ICompactSerializer<ApplicationState> serializer_;
-    static
-    {
-        serializer_ = new ApplicationStateSerializer();
-    }
+    private static ICompactSerializer<ApplicationState> serializer_  = new ApplicationStateSerializer();
     
     int version_;
     String state_;
 
-        
-    ApplicationState(String state, int version)
-    {
-        state_ = state;
-        version_ = version;
-    }
-
-    public static ICompactSerializer<ApplicationState> serializer()
-    {
-        return serializer_;
-    }
     
     /**
      * Wraps the specified state into a ApplicationState instance.
@@ -45,31 +30,6 @@ public class ApplicationState
         state_ = state;
         version_ = VersionGenerator.getNextVersion();
     }
-        
-    public String getState()
-    {
-        return state_;
-    }
-    
-    int getStateVersion()
-    {
-        return version_;
-    }
 }
 
-class ApplicationStateSerializer implements ICompactSerializer<ApplicationState>
-{
-    public void serialize(ApplicationState appState, DataOutputStream dos)
-    {
-        dos.writeUTF(appState.state_);
-        dos.writeInt(appState.version_);
-    }
-
-    public ApplicationState deserialize(DataInputStream dis) 
-    {
-        String state = dis.readUTF();
-        int version = dis.readInt();
-        return new ApplicationState(state, version);
-    }
-}
 

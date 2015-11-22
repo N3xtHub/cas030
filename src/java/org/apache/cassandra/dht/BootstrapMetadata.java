@@ -8,9 +8,6 @@
 */
 class BootstrapMetadata
 {
-    private static ICompactSerializer<BootstrapMetadata> serializer_
-        = new BootstrapMetadataSerializer();
-    
     protected EndPoint target_;
     protected List<Range> ranges_;
 }

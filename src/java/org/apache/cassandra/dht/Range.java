@@ -1,29 +1,15 @@
 
 /**
+ * DHT - Distributed Hash Table
  * A representation of the range that a node is responsible for on the DHT ring.
  */
 
 public class Range implements Comparable<Range>
 {
-    private static ICompactSerializer<Range> serializer_;
-    static
-    {
-        serializer_ = new RangeSerializer();
-    }
-    
-    public static ICompactSerializer<Range> serializer()
-    {
-        return serializer_;
-    }
+    private static ICompactSerializer<Range> serializer_ = new RangeSerializer();
     
     private final Token left_;
     private final Token right_;
-
-    public Range(Token left, Token right)
-    {
-        left_ = left;
-        right_ = right;
-    }
 
 
     /**
@@ -89,8 +75,6 @@ public class Range implements Comparable<Range>
 
     public static boolean isTokenInRanges(Token token, List<Range> ranges)
     {
-        assert ranges != null;
-
         for (Range range : ranges)
         {
             if(range.contains(token))
@@ -107,29 +91,5 @@ public class Range implements Comparable<Range>
             return false;
         Range rhs = (Range)o;
         return left_.equals(rhs.left_) && right_.equals(rhs.right_);
-    }
-    
-    public int hashCode()
-    {
-        return toString().hashCode();
-    }
-    
-    public String toString()
-    {
-        return "(" + left_ + "," + right_ + "]";
-    }
-}
-
-class RangeSerializer implements ICompactSerializer<Range>
-{
-    public void serialize(Range range, DataOutputStream dos) 
-    {
-        Token.serializer().serialize(range.left(), dos);
-        Token.serializer().serialize(range.right(), dos);
-    }
-
-    public Range deserialize(DataInputStream dis) 
-    {
-        return new Range(Token.serializer().deserialize(dis), Token.serializer().deserialize(dis));
     }
 }

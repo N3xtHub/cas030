@@ -7,8 +7,6 @@
 */
 public class LeaveJoinProtocolImpl implements Runnable
 {
-    private static Logger logger_ = Logger.getLogger(LeaveJoinProtocolImpl.class);    
-    
     /* endpoints that are to be moved. */
     protected EndPoint[] targets_ = new EndPoint[0];
     /* position where they need to be moved */
@@ -25,63 +23,59 @@ public class LeaveJoinProtocolImpl implements Runnable
 
     public void run()
     {  
-        try
+         /* copy the token to endpoint map */
+        Map<Token, EndPoint> tokenToEndPointMap = tokenMetadata_.cloneTokenEndPointMap();
+        /* copy the endpoint to token map */
+        Map<EndPoint, Token> endpointToTokenMap = tokenMetadata_.cloneEndPointTokenMap();
+        
+        Set<Token> oldTokens = new HashSet<Token>( tokenToEndPointMap.keySet() );
+        Range[] oldRanges = StorageService.instance().getAllRanges(oldTokens);
+       
+        /* Calculate the list of nodes that handle the old ranges */
+        Map<Range, List<EndPoint>> oldRangeToEndPointMap = StorageService.instance().constructRangeToEndPointMap(oldRanges);
+        
+        /* Remove the tokens of the nodes leaving the ring */
+        Set<Token> tokens = getTokensForLeavingNodes();
+        oldTokens.removeAll(tokens);
+        Range[] rangesAfterNodesLeave = StorageService.instance().getAllRanges(oldTokens);
+        /* Get expanded range to initial range mapping */
+        Map<Range, List<Range>> expandedRangeToOldRangeMap = getExpandedRangeToOldRangeMapping(oldRanges, rangesAfterNodesLeave);
+        /* add the new token positions to the old tokens set */
+        for (Token token : tokens_)
+            oldTokens.add(token);
+        Range[] rangesAfterNodesJoin = StorageService.instance().getAllRanges(oldTokens);
+        /* replace the ranges that were split with the split ranges in the old configuration */
+        addSplitRangesToOldConfiguration(oldRangeToEndPointMap, rangesAfterNodesJoin);
+        
+        /* Re-calculate the new ranges after the new token positions are added */
+        Range[] newRanges = StorageService.instance().getAllRanges(oldTokens);
+        /* Remove the old locations from tokenToEndPointMap and add the new locations they are moving to */
+        for ( int i = 0; i < targets_.length; ++i )
         {
-            logger_.debug("Beginning leave/join process for ...");                                                               
-            /* copy the token to endpoint map */
-            Map<Token, EndPoint> tokenToEndPointMap = tokenMetadata_.cloneTokenEndPointMap();
-            /* copy the endpoint to token map */
-            Map<EndPoint, Token> endpointToTokenMap = tokenMetadata_.cloneEndPointTokenMap();
-            
-            Set<Token> oldTokens = new HashSet<Token>( tokenToEndPointMap.keySet() );
-            Range[] oldRanges = StorageService.instance().getAllRanges(oldTokens);
-           
-            /* Calculate the list of nodes that handle the old ranges */
-            Map<Range, List<EndPoint>> oldRangeToEndPointMap = StorageService.instance().constructRangeToEndPointMap(oldRanges);
-            
-            /* Remove the tokens of the nodes leaving the ring */
-            Set<Token> tokens = getTokensForLeavingNodes();
-            oldTokens.removeAll(tokens);
-            Range[] rangesAfterNodesLeave = StorageService.instance().getAllRanges(oldTokens);
-            /* Get expanded range to initial range mapping */
-            Map<Range, List<Range>> expandedRangeToOldRangeMap = getExpandedRangeToOldRangeMapping(oldRanges, rangesAfterNodesLeave);
-            /* add the new token positions to the old tokens set */
-            for (Token token : tokens_)
-                oldTokens.add(token);
-            Range[] rangesAfterNodesJoin = StorageService.instance().getAllRanges(oldTokens);
-            /* replace the ranges that were split with the split ranges in the old configuration */
-            addSplitRangesToOldConfiguration(oldRangeToEndPointMap, rangesAfterNodesJoin);
-            
-            /* Re-calculate the new ranges after the new token positions are added */
-            Range[] newRanges = StorageService.instance().getAllRanges(oldTokens);
-            /* Remove the old locations from tokenToEndPointMap and add the new locations they are moving to */
-            for ( int i = 0; i < targets_.length; ++i )
+            tokenToEndPointMap.remove( endpointToTokenMap.get(targets_[i]) );
+            tokenToEndPointMap.put(tokens_[i], targets_[i]);
+        }            
+        /* Calculate the list of nodes that handle the new ranges */            
+        Map<Range, List<EndPoint>> newRangeToEndPointMap = StorageService.instance().constructRangeToEndPointMap(newRanges, tokenToEndPointMap);
+        /* Remove any expanded ranges and replace them with ranges whose aggregate is the expanded range in the new configuration. */
+        removeExpandedRangesFromNewConfiguration(newRangeToEndPointMap, expandedRangeToOldRangeMap);
+        /* Calculate ranges that need to be sent and from whom to where */
+        Map<Range, List<BootstrapSourceTarget>> rangesWithSourceTarget = LeaveJoinProtocolHelper.getRangeSourceTargetInfo(oldRangeToEndPointMap, newRangeToEndPointMap);
+        /* For debug purposes only */
+        Set<Range> ranges = rangesWithSourceTarget.keySet();
+        for ( Range range : ranges )
+        {
+            System.out.print("RANGE: " + range + ":: ");
+            List<BootstrapSourceTarget> infos = rangesWithSourceTarget.get(range);
+            for ( BootstrapSourceTarget info : infos )
             {
-                tokenToEndPointMap.remove( endpointToTokenMap.get(targets_[i]) );
-                tokenToEndPointMap.put(tokens_[i], targets_[i]);
-            }            
-            /* Calculate the list of nodes that handle the new ranges */            
-            Map<Range, List<EndPoint>> newRangeToEndPointMap = StorageService.instance().constructRangeToEndPointMap(newRanges, tokenToEndPointMap);
-            /* Remove any expanded ranges and replace them with ranges whose aggregate is the expanded range in the new configuration. */
-            removeExpandedRangesFromNewConfiguration(newRangeToEndPointMap, expandedRangeToOldRangeMap);
-            /* Calculate ranges that need to be sent and from whom to where */
-            Map<Range, List<BootstrapSourceTarget>> rangesWithSourceTarget = LeaveJoinProtocolHelper.getRangeSourceTargetInfo(oldRangeToEndPointMap, newRangeToEndPointMap);
-            /* For debug purposes only */
-            Set<Range> ranges = rangesWithSourceTarget.keySet();
-            for ( Range range : ranges )
-            {
-                System.out.print("RANGE: " + range + ":: ");
-                List<BootstrapSourceTarget> infos = rangesWithSourceTarget.get(range);
-                for ( BootstrapSourceTarget info : infos )
-                {
-                    System.out.print(info);
-                    System.out.print(" ");
-                }
-                System.out.println(System.getProperty("line.separator"));
+                System.out.print(info);
+                System.out.print(" ");
             }
-            /* Send messages to respective folks to stream data over to the new nodes being bootstrapped */
-            LeaveJoinProtocolHelper.assignWork(rangesWithSourceTarget);
+            System.out.println(System.getProperty("line.separator"));
         }
+        /* Send messages to respective folks to stream data over to the new nodes being bootstrapped */
+        LeaveJoinProtocolHelper.assignWork(rangesWithSourceTarget);
     }
     
     /**
