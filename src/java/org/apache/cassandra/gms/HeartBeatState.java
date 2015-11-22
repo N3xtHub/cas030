@@ -6,12 +6,6 @@
 
 class HeartBeatState
 {
-    private static ICompactSerializer<HeartBeatState> serializer_;
-    
-    static
-    {
-        serializer_ = new HeartBeatStateSerializer();
-    }
     
     int generation_;
     AtomicInteger heartbeat_;
@@ -32,21 +26,11 @@ class HeartBeatState
         heartbeat_ = new AtomicInteger(heartbeat);
         version_ = version;
     }
-
-    public static ICompactSerializer<HeartBeatState> serializer()
-    {
-        return serializer_;
-    }
     
     void updateGeneration()
     {
         ++generation_;
         version_ = VersionGenerator.getNextVersion();
-    }
-    
-    int getHeartBeat()
-    {
-        return heartbeat_.get();
     }
     
     void updateHeartBeat()
@@ -61,17 +45,3 @@ class HeartBeatState
     }
 };
 
-class HeartBeatStateSerializer implements ICompactSerializer<HeartBeatState>
-{
-    public void serialize(HeartBeatState hbState, DataOutputStream dos) throws IOException
-    {
-        dos.writeInt(hbState.generation_);
-        dos.writeInt(hbState.heartbeat_.get());
-        dos.writeInt(hbState.version_);
-    }
-    
-    public HeartBeatState deserialize(DataInputStream dis) throws IOException
-    {
-        return new HeartBeatState(dis.readInt(), dis.readInt(), dis.readInt());
-    }
-}

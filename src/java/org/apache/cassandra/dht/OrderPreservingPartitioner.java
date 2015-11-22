@@ -71,11 +71,6 @@ public class OrderPreservingPartitioner implements IPartitioner
         }
     };
 
-    public Token.TokenFactory<String> getTokenFactory()
-    {
-        return tokenFactory;
-    }
-
     public Token getInitialToken(String key)
     {
         return new StringToken(key);

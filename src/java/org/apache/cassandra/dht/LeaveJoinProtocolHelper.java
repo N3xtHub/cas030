@@ -1,8 +1,6 @@
 
 class LeaveJoinProtocolHelper
-{
-    private static Logger logger_ = Logger.getLogger(LeaveJoinProtocolHelper.class);
-    
+{    
     /**
      * Give a range a-------------b which is being split as
      * a-----x-----y-----b then we want a mapping from 
@@ -92,11 +90,6 @@ class LeaveJoinProtocolHelper
                     }
                 }                        
             }
-            else
-            {
-                logger_.warn("Trespassing - scram");
-            }
-            logger_.debug("Done figuring out the dudes who are bumped out for range " + range + " ...");
         }
         for ( Range range : oldRangeSet )
         {                    

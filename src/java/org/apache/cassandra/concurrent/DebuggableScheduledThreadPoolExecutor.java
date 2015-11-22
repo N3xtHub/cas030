@@ -24,26 +24,9 @@ public final class DebuggableScheduledThreadPoolExecutor extends ScheduledThread
         if ( t != null )
         {  
             Context ctx = ThreadLocalContext.get();
-            if ( ctx != null )
-            {
-                Object object = ctx.get(r.getClass().getName());
-                
-                if ( object != null )
-                {
-                    logger_.info("**** In afterExecute() " + t.getClass().getName() + " occured while working with " + object + " ****");
-                }
-                else
-                {
-                    logger_.info("**** In afterExecute() " + t.getClass().getName() + " occured ****");
-                }
-            }
+            Object object = ctx.get(r.getClass().getName());
             
             Throwable cause = t.getCause();
-            if ( cause != null )
-            {
-                logger_.info( LogUtil.throwableToString(cause) );
-            }
-            logger_.info( LogUtil.throwableToString(t) );
         }
     }
 }

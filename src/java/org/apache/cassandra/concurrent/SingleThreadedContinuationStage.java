@@ -16,13 +16,6 @@ public class SingleThreadedContinuationStage implements IStage
         name_ = name;        
     }
     
-    /* Implementing the IStage interface methods */
-    
-    public String getName()
-    {
-        return name_;
-    }
-    
     public ExecutorService getInternalThreadPool()
     {
         return executorService_;

@@ -36,7 +36,7 @@ class PureRandom extends Random
         return value;
     }
 
-    public static void main(String[] args) throws Throwable
+    public static void main(String[] args)
     {
     	Random pr = new PureRandom();
         int ubs[] = new int[] { 2, 3, 1, 10, 5, 0};

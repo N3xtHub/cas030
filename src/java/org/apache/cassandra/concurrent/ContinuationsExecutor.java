@@ -1,18 +1,16 @@
 
 /**
- * An {@link ExecutorService} that executes each submitted task using one of
- * possibly several pooled threads, normally configured using {@link Executors}
+ * An ExecutorService that executes each submitted task using one of
+ * possibly several pooled threads, normally configured using Executors
  * factory methods.
  * 
- * <p>
  * Thread pools address two different problems: they usually provide improved
  * performance when executing large numbers of asynchronous tasks, due to
  * reduced per-task invocation overhead, and they provide a means of bounding
  * and managing the resources, including threads, consumed when executing a
- * collection of tasks. Each {@code ContinuationsExecutor} also maintains some
+ * collection of tasks. Each ContinuationsExecutor also maintains some
  * basic statistics, such as the number of completed tasks.
  * 
- * <p>
  * To be useful across a wide range of contexts, this class provides many
  * adjustable parameters and extensibility hooks. However, programmers are urged
  * to use the more convenient {@link Executors} factory methods {@link
@@ -22,7 +20,6 @@
  * that preconfigure settings for the most common usage scenarios. Otherwise,
  * use the following guide when manually configuring and tuning this class:
  * 
- * <dl>
  * 
  * <dt>Core and maximum pool sizes</dt>
  * 
@@ -87,7 +84,6 @@
  * <dd>Any {@link BlockingQueue} may be used to transfer and hold submitted
  * tasks. The use of this queue interacts with pool sizing:
  * 
- * <ul>
  * 
  * <li> If fewer than corePoolSize threads are running, the Executor always
  * prefers adding a new thread rather than queuing.</li>
@@ -98,7 +94,6 @@
  * <li> If a request cannot be queued, a new thread is created unless this would
  * exceed maximumPoolSize, in which case, the task will be rejected.</li>
  * 
- * </ul>
  * 
  * There are three general strategies for queuing:
  * <ol>
@@ -211,50 +206,6 @@
  * of the protected hook methods. For example, here is a subclass that adds a
  * simple pause/resume feature:
  * 
- * <pre>
- *  {@code
- *  class PausableThreadPoolExecutor extends ContinuationsExecutor {
- *    private boolean isPaused;
- *    private ReentrantLock pauseLock = new ReentrantLock();
- *    private Condition unpaused = pauseLock.newCondition();
- * 
- *    public PausableThreadPoolExecutor(...) { super(...); }
- * 
- *    protected void beforeExecute(Thread t, Runnable r) {
- *      super.beforeExecute(t, r);
- *      pauseLock.lock();
- *      try {
- *        while (isPaused) unpaused.await();
- *      } catch (InterruptedException ie) {
- *        t.interrupt();
- *      } finally {
- *        pauseLock.unlock();
- *      }
- *    }
- * 
- *    public void pause() {
- *      pauseLock.lock();
- *      try {
- *        isPaused = true;
- *      } finally {
- *        pauseLock.unlock();
- *      }
- *    }
- * 
- *    public void resume() {
- *      pauseLock.lock();
- *      try {
- *        isPaused = false;
- *        unpaused.signalAll();
- *      } finally {
- *        pauseLock.unlock();
- *      }
- *    }
- *  }}
- * </pre>
- * 
- * @since 1.5
- * @author Doug Lea
  */
 public class ContinuationsExecutor extends AbstractExecutorService
 {

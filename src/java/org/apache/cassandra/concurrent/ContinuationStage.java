@@ -17,11 +17,6 @@ public class ContinuationStage implements IStage
                 );        
     }
     
-    public String getName() 
-    {        
-        return name_;
-    }
-    
     public ExecutorService getInternalThreadPool()
     {
         return executorService_;

@@ -25,28 +25,14 @@ public class DebuggableThreadPoolExecutor extends ThreadPoolExecutor implements 
         super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
         super.prestartAllCoreThreads();
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        try
-        {
-            objName = new ObjectName("org.apache.cassandra.concurrent:type=" + threadFactory.id_);
-            mbs.registerMBean(this, objName);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        objName = new ObjectName("org.apache.cassandra.concurrent:type=" + threadFactory.id_);
+        mbs.registerMBean(this, objName);
     }
     
     public void unregisterMBean()
     {
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        try
-        {
-            mbs.unregisterMBean(objName);
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
-        }
+        mbs.unregisterMBean(objName);
     }
 
     public long getPendingTasks()
@@ -67,33 +53,10 @@ public class DebuggableThreadPoolExecutor extends ThreadPoolExecutor implements 
 
         if (r instanceof FutureTask) {
             assert t == null;
-            try
-            {
-                ((FutureTask)r).get();
-            }
-            catch (InterruptedException e)
-            {
-                throw new RuntimeException(e);
-            }
-            catch (ExecutionException e)
-            {
-                t = e;
-            }
+            ((FutureTask)r).get();
         }
-
-        if ( t != null )
-        {  
-            Context ctx = ThreadLocalContext.get();
-            if ( ctx != null )
-            {
-                Object object = ctx.get(r.getClass().getName());
-                
-                if ( object != null )
-                {
-                    logger_.error("In afterExecute() " + t.getClass().getName() + " occured while working with " + object);
-                }
-            }
-            logger_.error("Error in ThreadPoolExecutor", t);
-        }
+      
+        Context ctx = ThreadLocalContext.get();
+        Object object = ctx.get(r.getClass().getName());   
     }
 }

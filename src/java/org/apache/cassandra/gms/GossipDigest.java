@@ -6,16 +6,9 @@
 
 public class GossipDigest implements Comparable<GossipDigest>
 {
-    private static ICompactSerializer<GossipDigest> serializer_ = new GossipDigestSerializer();
-    
     EndPoint endPoint_;
     int generation_;
     int maxVersion_;
-
-    public static ICompactSerializer<GossipDigest> serializer()
-    {
-        return serializer_;
-    }
     
     public int compareTo(GossipDigest gDigest)
     {

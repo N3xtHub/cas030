@@ -95,7 +95,6 @@ class EndPointStatesSerializationHelper
         {
             if ( Gossiper.MAX_GOSSIP_PACKET_SIZE - dos.size() < estimate )
             {
-                logger_.info("@@@@ Breaking out to respect the MTU size in EPS. Estimate is " + estimate + " @@@@");
                 bVal = false;
                 break;
             }
@@ -119,7 +118,6 @@ class EndPointStatesSerializationHelper
         {
             if ( dis.available() == 0 )
             {
-                logger_.info("Remaining bytes zero. Stopping deserialization in EndPointState.");
                 break;
             }
             // int length = dis.readInt();            
