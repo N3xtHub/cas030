@@ -18,10 +18,6 @@ public class SequenceFile
             filename_ = filename;
         }
 
-        public String getFileName()
-        {
-            return filename_;
-        }
 
         public long lastModified()
         {
@@ -34,19 +30,19 @@ public class SequenceFile
     {
         protected RandomAccessFile file_;
 
-        Writer(String filename) throws IOException
+        Writer(String filename) 
         {
             super(filename);
             init(filename);
         }
 
-        Writer(String filename, int size) throws IOException
+        Writer(String filename, int size) 
         {
             super(filename);
             init(filename, size);
         }
 
-        protected void init(String filename) throws IOException
+        protected void init(String filename) 
         {
             File file = new File(filename);
             if (!file.exists())
@@ -56,32 +52,30 @@ public class SequenceFile
             file_ = new RandomAccessFile(file, "rw");
         }
 
-        protected void init(String filename, int size) throws IOException
+        protected void init(String filename, int size) 
         {
             init(filename);
         }
 
-        public long getCurrentPosition() throws IOException
+        public long getCurrentPosition() 
         {
             return file_.getFilePointer();
         }
 
-        public void seek(long position) throws IOException
+        public void seek(long position) 
         {
             file_.seek(position);
         }
 
-        public void append(DataOutputBuffer buffer) throws IOException
+        public void append(DataOutputBuffer buffer) 
         {
             file_.write(buffer.getData(), 0, buffer.getLength());
         }
 
-        public void append(DataOutputBuffer keyBuffer, DataOutputBuffer buffer) throws IOException
+        public void append(DataOutputBuffer keyBuffer, DataOutputBuffer buffer) 
         {
             int keyBufLength = keyBuffer.getLength();
-            if (keyBuffer == null || keyBufLength == 0)
-                throw new IllegalArgumentException("Key cannot be NULL or of zero length.");
-
+      
             file_.writeInt(keyBufLength);
             file_.write(keyBuffer.getData(), 0, keyBufLength);
 
@@ -90,32 +84,26 @@ public class SequenceFile
             file_.write(buffer.getData(), 0, length);
         }
 
-        public void append(String key, DataOutputBuffer buffer) throws IOException
+        public void append(String key, DataOutputBuffer buffer) 
         {
-            if (key == null)
-                throw new IllegalArgumentException("Key cannot be NULL.");
-
+           
             file_.writeUTF(key);
             int length = buffer.getLength();
             file_.writeInt(length);
             file_.write(buffer.getData(), 0, length);
         }
 
-        public void append(String key, byte[] value) throws IOException
+        public void append(String key, byte[] value) 
         {
-            if (key == null)
-                throw new IllegalArgumentException("Key cannot be NULL.");
-
+            
             file_.writeUTF(key);
             file_.writeInt(value.length);
             file_.write(value);
         }
 
-        public void append(String key, long value) throws IOException
+        public void append(String key, long value) 
         {
-            if (key == null)
-                throw new IllegalArgumentException("Key cannot be NULL.");
-
+            
             file_.writeUTF(key);
             file_.writeLong(value);
         }
@@ -128,23 +116,23 @@ public class SequenceFile
          *
          * @param bytes the bytes to write
          */
-        public long writeDirect(byte[] bytes) throws IOException
+        public long writeDirect(byte[] bytes) 
         {
             file_.write(bytes);
             return file_.getFilePointer();
         }
 
-        public void writeLong(long value) throws IOException
+        public void writeLong(long value) 
         {
             file_.writeLong(value);
         }
 
-        public void close() throws IOException
+        public void close() 
         {
             file_.close();
         }
 
-        public void close(byte[] footer, int size) throws IOException
+        public void close(byte[] footer, int size) 
         {
             file_.writeUTF(SequenceFile.marker_);
             file_.writeInt(size);
@@ -156,7 +144,7 @@ public class SequenceFile
             return filename_;
         }
 
-        public long getFileSize() throws IOException
+        public long getFileSize() 
         {
             return file_.length();
         }
@@ -165,19 +153,19 @@ public class SequenceFile
     public static class BufferWriter extends Writer
     {
 
-        BufferWriter(String filename, int size) throws IOException
+        BufferWriter(String filename, int size) 
         {
             super(filename, size);
         }
 
         @Override
-        protected void init(String filename) throws IOException
+        protected void init(String filename) 
         {
             init(filename, 0);
         }
 
         @Override
-        protected void init(String filename, int size) throws IOException
+        protected void init(String filename, int size) 
         {
             File file = new File(filename);
             file_ = new BufferedRandomAccessFile(file, "rw", size);
@@ -191,26 +179,26 @@ public class SequenceFile
     public static class ChecksumWriter extends Writer
     {
 
-        ChecksumWriter(String filename, int size) throws IOException
+        ChecksumWriter(String filename, int size) 
         {
             super(filename, size);
         }
 
         @Override
-        protected void init(String filename) throws IOException
+        protected void init(String filename) 
         {
             init(filename, 0);
         }
 
         @Override
-        protected void init(String filename, int size) throws IOException
+        protected void init(String filename, int size) 
         {
             File file = new File(filename);
             file_ = new ChecksumRandomAccessFile(file, "rw", size);
         }
 
         @Override
-        public void close() throws IOException
+        public void close() 
         {
             super.close();
             ChecksumManager.close(filename_);
@@ -221,24 +209,24 @@ public class SequenceFile
     {
         private FileChannel fc_;
 
-        public ConcurrentWriter(String filename) throws IOException
+        public ConcurrentWriter(String filename) 
         {
             super(filename);
             RandomAccessFile raf = new RandomAccessFile(filename, "rw");
             fc_ = raf.getChannel();
         }
 
-        public long getCurrentPosition() throws IOException
+        public long getCurrentPosition() 
         {
             return fc_.position();
         }
 
-        public void seek(long position) throws IOException
+        public void seek(long position) 
         {
             fc_.position(position);
         }
 
-        public void append(DataOutputBuffer buffer) throws IOException
+        public void append(DataOutputBuffer buffer) 
         {
             int length = buffer.getLength();
             ByteBuffer byteBuffer = ByteBuffer.allocateDirect(length);
@@ -247,7 +235,7 @@ public class SequenceFile
             fc_.write(byteBuffer);
         }
 
-        public void append(DataOutputBuffer keyBuffer, DataOutputBuffer buffer) throws IOException
+        public void append(DataOutputBuffer keyBuffer, DataOutputBuffer buffer) 
         {
             int keyBufLength = keyBuffer.getLength();
             if (keyBuffer == null || keyBufLength == 0)
@@ -264,7 +252,7 @@ public class SequenceFile
             fc_.write(byteBuffer);
         }
 
-        public void append(String key, DataOutputBuffer buffer) throws IOException
+        public void append(String key, DataOutputBuffer buffer) 
         {
             if (key == null)
                 throw new IllegalArgumentException("Key cannot be NULL.");
@@ -279,7 +267,7 @@ public class SequenceFile
             fc_.write(byteBuffer);
         }
 
-        public void append(String key, byte[] value) throws IOException
+        public void append(String key, byte[] value) 
         {
             if (key == null)
                 throw new IllegalArgumentException("Key cannot be NULL.");
@@ -293,7 +281,7 @@ public class SequenceFile
             fc_.write(byteBuffer);
         }
 
-        public void append(String key, long value) throws IOException
+        public void append(String key, long value) 
         {
             if (key == null)
                 throw new IllegalArgumentException("Key cannot be NULL.");
@@ -312,7 +300,7 @@ public class SequenceFile
          * If not used carefully it could completely screw up reads
          * of other key/value pairs that are written.
         */
-        public long writeDirect(byte[] bytes) throws IOException
+        public long writeDirect(byte[] bytes) 
         {
             ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
             byteBuffer.put(bytes);
@@ -321,7 +309,7 @@ public class SequenceFile
             return fc_.position();
         }
 
-        public void writeLong(long value) throws IOException
+        public void writeLong(long value) 
         {
             ByteBuffer byteBuffer = ByteBuffer.allocateDirect(8);
             byteBuffer.putLong(value);
@@ -329,12 +317,12 @@ public class SequenceFile
             fc_.write(byteBuffer);
         }
 
-        public void close() throws IOException
+        public void close() 
         {
             fc_.close();
         }
 
-        public void close(byte[] footer, int size) throws IOException
+        public void close(byte[] footer, int size) 
         {
             /* Size is marker length + "int" for size + footer data */
             ByteBuffer byteBuffer = ByteBuffer.allocateDirect(utfPrefix_ + SequenceFile.marker_.length() + 4 + footer.length);
@@ -350,7 +338,7 @@ public class SequenceFile
             return filename_;
         }
 
-        public long getFileSize() throws IOException
+        public long getFileSize() 
         {
             return fc_.size();
         }
@@ -361,7 +349,7 @@ public class SequenceFile
         private FileChannel fc_;
         private MappedByteBuffer buffer_;
 
-        public FastConcurrentWriter(String filename, int size) throws IOException
+        public FastConcurrentWriter(String filename, int size) 
         {
             super(filename);
             fc_ = new RandomAccessFile(filename, "rw").getChannel();
@@ -392,22 +380,22 @@ public class SequenceFile
         }
 
 
-        public long getCurrentPosition() throws IOException
+        public long getCurrentPosition() 
         {
             return buffer_.position();
         }
 
-        public void seek(long position) throws IOException
+        public void seek(long position) 
         {
             buffer_.position((int) position);
         }
 
-        public void append(DataOutputBuffer buffer) throws IOException
+        public void append(DataOutputBuffer buffer) 
         {
             buffer_.put(buffer.getData(), 0, buffer.getLength());
         }
 
-        public void append(DataOutputBuffer keyBuffer, DataOutputBuffer buffer) throws IOException
+        public void append(DataOutputBuffer keyBuffer, DataOutputBuffer buffer) 
         {
             int keyBufLength = keyBuffer.getLength();
             if (keyBuffer == null || keyBufLength == 0)
@@ -420,7 +408,7 @@ public class SequenceFile
             buffer_.put(buffer.getData(), 0, length);
         }
 
-        public void append(String key, DataOutputBuffer buffer) throws IOException
+        public void append(String key, DataOutputBuffer buffer) 
         {
             if (key == null)
                 throw new IllegalArgumentException("Key cannot be NULL.");
@@ -431,7 +419,7 @@ public class SequenceFile
             buffer_.put(buffer.getData(), 0, length);
         }
 
-        public void append(String key, byte[] value) throws IOException
+        public void append(String key, byte[] value) 
         {
             if (key == null)
                 throw new IllegalArgumentException("Key cannot be NULL.");
@@ -441,7 +429,7 @@ public class SequenceFile
             buffer_.put(value);
         }
 
-        public void append(String key, long value) throws IOException
+        public void append(String key, long value) 
         {
             if (key == null)
                 throw new IllegalArgumentException("Key cannot be NULL.");
@@ -456,18 +444,18 @@ public class SequenceFile
          * If not used carefully it could completely screw up reads
          * of other key/value pairs that are written.
         */
-        public long writeDirect(byte[] bytes) throws IOException
+        public long writeDirect(byte[] bytes) 
         {
             buffer_.put(bytes);
             return buffer_.position();
         }
 
-        public void writeLong(long value) throws IOException
+        public void writeLong(long value) 
         {
             buffer_.putLong(value);
         }
 
-        public void close() throws IOException
+        public void close() 
         {
             buffer_.flip();
             buffer_.force();
@@ -475,7 +463,7 @@ public class SequenceFile
             fc_.truncate(buffer_.limit());
         }
 
-        public void close(byte[] footer, int size) throws IOException
+        public void close(byte[] footer, int size) 
         {
             SequenceFile.writeUTF(buffer_, SequenceFile.marker_);
             buffer_.putInt(size);
@@ -488,7 +476,7 @@ public class SequenceFile
             return filename_;
         }
 
-        public long getFileSize() throws IOException
+        public long getFileSize() 
         {
             return buffer_.position();
         }
@@ -515,7 +503,7 @@ public class SequenceFile
          *
          * @param key the key whose offset is to be extracted from the current block index
          */
-        public long getPositionFromBlockIndex(String key) throws IOException
+        public long getPositionFromBlockIndex(String key) 
         {
             long position = -1L;
             /* note the beginning of the block index */
@@ -568,9 +556,9 @@ public class SequenceFile
          *
          * @param key     we are interested in.
          * @param section indicates the location of the block index.
-         * @throws IOException
+         * @
          */
-        private long seekTo(String key, Coordinate section) throws IOException
+        private long seekTo(String key, Coordinate section) 
         {
             seek(section.end_);
             long position = getPositionFromBlockIndex(key);
@@ -583,9 +571,9 @@ public class SequenceFile
          * Defreeze the bloom filter.
          *
          * @return bloom filter summarizing the column information
-         * @throws IOException
+         * @
          */
-        private BloomFilter defreezeBloomFilter() throws IOException
+        private BloomFilter defreezeBloomFilter() 
         {
             int size = file_.readInt();
             byte[] bytes = new byte[size];
@@ -603,7 +591,7 @@ public class SequenceFile
          * @param cfName
          * @return
          */
-        private int handleColumnNameIndexes(String cfName, List<IndexHelper.ColumnIndexInfo> columnIndexList) throws IOException
+        private int handleColumnNameIndexes(String cfName, List<IndexHelper.ColumnIndexInfo> columnIndexList) 
         {
             /* check if we have an index */
             boolean hasColumnIndexes = file_.readBoolean();
@@ -631,7 +619,7 @@ public class SequenceFile
          * @param cfName
          * @return
          */
-        private int handleColumnTimeIndexes(String cfName, List<IndexHelper.ColumnIndexInfo> columnIndexList) throws IOException
+        private int handleColumnTimeIndexes(String cfName, List<IndexHelper.ColumnIndexInfo> columnIndexList) 
         {
             /* check if we have an index */
             boolean hasColumnIndexes = file_.readBoolean();
@@ -665,9 +653,9 @@ public class SequenceFile
          * @param timeRange time range we are interested in
          * @param section   region of the file that needs to be read
          * @return number of bytes that were read.
-         * @throws IOException
+         * @
          */
-        public long next(String key, DataOutputBuffer bufOut, String columnFamilyName, List<String> columnNames, IndexHelper.TimeRange timeRange, Coordinate section) throws IOException
+        public long next(String key, DataOutputBuffer bufOut, String columnFamilyName, List<String> columnNames, IndexHelper.TimeRange timeRange, Coordinate section) 
         {
             assert !columnFamilyName.contains(":");
             assert timeRange == null || columnNames == null; // at most one may be non-null
@@ -716,7 +704,7 @@ public class SequenceFile
         }
 
         private void readTimeRange(String key, DataOutputBuffer bufOut, String columnFamilyName, IndexHelper.TimeRange timeRange)
-                throws IOException
+                
         {
             int dataSize = file_.readInt();
 
@@ -780,7 +768,7 @@ public class SequenceFile
         }
 
         private void readColumns(String key, DataOutputBuffer bufOut, String columnFamilyName, List<String> cNames)
-                throws IOException
+                
         {
             int dataSize = file_.readInt();
 
@@ -883,7 +871,7 @@ public class SequenceFile
          * @param bufOut DataOutputStream that needs to be filled.
          * @return total number of bytes read/considered
          */
-        public long next(DataOutputBuffer bufOut) throws IOException
+        public long next(DataOutputBuffer bufOut) 
         {
             long bytesRead = -1L;
             if (isEOF())
@@ -925,7 +913,7 @@ public class SequenceFile
          * @param section region of the file that needs to be read
          * @return total number of bytes read/considered
          */
-        public long next(String key, DataOutputBuffer bufOut, Coordinate section) throws IOException
+        public long next(String key, DataOutputBuffer bufOut, Coordinate section) 
         {
             long bytesRead = -1L;
             if (isEOF() || seekTo(key, section) < 0)
@@ -974,38 +962,38 @@ public class SequenceFile
 
     public static class Reader extends AbstractReader
     {
-        Reader(String filename) throws IOException
+        Reader(String filename) 
         {
             super(filename);
             init(filename);
         }
 
-        protected void init(String filename) throws IOException
+        protected void init(String filename) 
         {
             file_ = new RandomAccessFile(filename, "r");
         }
 
-        public long getEOF() throws IOException
+        public long getEOF() 
         {
             return file_.length();
         }
 
-        public long getCurrentPosition() throws IOException
+        public long getCurrentPosition() 
         {
             return file_.getFilePointer();
         }
 
-        public boolean isHealthyFileDescriptor() throws IOException
+        public boolean isHealthyFileDescriptor() 
         {
             return file_.getFD().valid();
         }
 
-        public void seek(long position) throws IOException
+        public void seek(long position) 
         {
             file_.seek(position);
         }
 
-        public boolean isEOF() throws IOException
+        public boolean isEOF() 
         {
             return (getCurrentPosition() == getEOF());
         }
@@ -1017,17 +1005,17 @@ public class SequenceFile
          *
          * @param bytes read from the buffer into the this array
          */
-        public void readDirect(byte[] bytes) throws IOException
+        public void readDirect(byte[] bytes) 
         {
             file_.readFully(bytes);
         }
 
-        public long readLong() throws IOException
+        public long readLong() 
         {
             return file_.readLong();
         }
 
-        public void close() throws IOException
+        public void close() 
         {
             file_.close();
         }
@@ -1037,13 +1025,13 @@ public class SequenceFile
     {
         private int size_;
 
-        BufferReader(String filename, int size) throws IOException
+        BufferReader(String filename, int size) 
         {
             super(filename);
             size_ = size;
         }
 
-        protected void init(String filename) throws IOException
+        protected void init(String filename) 
         {
             file_ = new BufferedRandomAccessFile(filename, "r", size_);
         }
@@ -1053,13 +1041,13 @@ public class SequenceFile
     {
         private int size_;
 
-        ChecksumReader(String filename, int size) throws IOException
+        ChecksumReader(String filename, int size) 
         {
             super(filename);
             size_ = size;
         }
 
-        protected void init(String filename) throws IOException
+        protected void init(String filename) 
         {
             file_ = new ChecksumRandomAccessFile(filename, "r", size_);
         }
@@ -1069,27 +1057,27 @@ public class SequenceFile
     public static final short utfPrefix_ = 2;
     public static final String marker_ = "Bloom-Filter";
 
-    public static IFileWriter writer(String filename) throws IOException
+    public static IFileWriter writer(String filename) 
     {
         return new Writer(filename);
     }
 
-    public static IFileWriter bufferedWriter(String filename, int size) throws IOException
+    public static IFileWriter bufferedWriter(String filename, int size) 
     {
         return new BufferWriter(filename, size);
     }
 
-    public static IFileWriter fastWriter(String filename, int size) throws IOException
+    public static IFileWriter fastWriter(String filename, int size) 
     {
         return new FastConcurrentWriter(filename, size);
     }
 
-    public static IFileReader reader(String filename) throws IOException
+    public static IFileReader reader(String filename) 
     {
         return new Reader(filename);
     }
 
-    public static IFileReader bufferedReader(String filename, int size) throws IOException
+    public static IFileReader bufferedReader(String filename, int size) 
     {
         return new BufferReader(filename, size);
     }

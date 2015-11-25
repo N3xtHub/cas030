@@ -110,8 +110,7 @@ public class FastBufferedInputStream extends FilterInputStream
     private byte[] getBufIfOpen() throws IOException
     {
         byte[] buffer = buf;
-        if (buffer == null)
-            throw new IOException("Stream closed");
+
         return buffer;
     }
     
@@ -144,10 +143,7 @@ public class FastBufferedInputStream extends FilterInputStream
     public FastBufferedInputStream(InputStream in, int size)
     {
         super(in);
-        if (size <= 0)
-        {
-            throw new IllegalArgumentException("Buffer size <= 0");
-        }
+
         buf = new byte[size];
     }
     
@@ -414,8 +410,7 @@ public class FastBufferedInputStream extends FilterInputStream
     public  void reset() throws IOException
     {
         getBufIfOpen(); // Cause exception if closed
-        if (markpos < 0)
-            throw new IOException("Resetting to invalid mark");
+
         pos = markpos;
     }
     

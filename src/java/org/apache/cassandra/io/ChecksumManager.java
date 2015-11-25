@@ -21,22 +21,12 @@ public class ChecksumManager
     public static ChecksumManager instance(String dataFile) throws IOException
     {
         ChecksumManager chksumMgr = chksumMgrs_.get(dataFile);
-        if ( chksumMgr == null )
+        atomic @
         {
-            lock_.lock();
-            try
-            {
-                if ( chksumMgr == null )
-                {
-                    chksumMgr = new ChecksumManager(dataFile);
-                    chksumMgrs_.put(dataFile, chksumMgr);
-                }
-            }
-            finally
-            {
-                lock_.unlock();
-            }
+            chksumMgr = new ChecksumManager(dataFile);
+            chksumMgrs_.put(dataFile, chksumMgr);
         }
+
         return chksumMgr;
     }
     
@@ -44,22 +34,12 @@ public class ChecksumManager
     public static ChecksumManager instance(String dataFile, String chkSumFile) throws IOException
     {
         ChecksumManager chksumMgr = chksumMgrs_.get(dataFile);
-        if ( chksumMgr == null )
+        atomic @ if ( chksumMgr == null )
         {
-            lock_.lock();
-            try
-            {
-                if ( chksumMgr == null )
-                {
-                    chksumMgr = new ChecksumManager(dataFile, chkSumFile);
-                    chksumMgrs_.put(dataFile, chksumMgr);
-                }
-            }
-            finally
-            {
-                lock_.unlock();
-            }
+            chksumMgr = new ChecksumManager(dataFile, chkSumFile);
+            chksumMgrs_.put(dataFile, chksumMgr);
         }
+
         return chksumMgr;
     }
     
@@ -198,7 +178,7 @@ public class ChecksumManager
     }
     
     /* TODO: Remove later. */
-    ChecksumManager(String dataFile, String chkSumFile) throws IOException
+    ChecksumManager(String dataFile, String chkSumFile) 
     {
         File file = new File(dataFile);
         String directory = file.getParent();
@@ -253,10 +233,6 @@ public class ChecksumManager
             /* add the chksum to memory */
             long key = ChecksumManager.key(fileId, chunkId);
             chksums_.put(key, chksum);
-        }
-        catch ( IOException ex )
-        {
-            logger_.warn( LogUtil.throwableToString(ex) );
         }
     }
     
@@ -323,7 +299,7 @@ public class ChecksumManager
         raf_.close();
     }
     
-    public static void main(String[] args) throws Throwable
+    public static void main(String[] args)
     {
         ChecksumReader rdr = new ChecksumReader("C:\\Engagements\\Cassandra\\Checksum-1.db");
         while ( !rdr.isEOF() )
@@ -363,34 +339,19 @@ class ChecksumReader
     public void map() throws IOException
     {
         RandomAccessFile file = new RandomAccessFile(filename_, "rw");
-        try
-        {
-            buffer_ = file.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length() );
-            buffer_.load();
-        }
-        finally
-        {
-            file.close();
-        }
+        buffer_ = file.getChannel().map(FileChannel.MapMode.READ_ONLY, 0, file.length() );
+        buffer_.load();
+        file.close();
     }
 
     public void map(long start, long end) throws IOException
     {
-        if ( start < 0 || end < 0 || end < start )
-            throw new IllegalArgumentException("Invalid values for start and end.");
-
         RandomAccessFile file = new RandomAccessFile(filename_, "rw");
-        try
-        {
-            if ( end == 0 )
-                end = file.length();
-            buffer_ = file.getChannel().map(FileChannel.MapMode.READ_ONLY, start, end);
-            buffer_.load();
-        }
-        finally
-        {
-            file.close();
-        }
+        if ( end == 0 )
+            end = file.length();
+        buffer_ = file.getChannel().map(FileChannel.MapMode.READ_ONLY, start, end);
+        buffer_.load();
+        file.close();
     }
 
     void unmap(final Object buffer)
@@ -399,17 +360,10 @@ class ChecksumReader
                 {
             public MappedByteBuffer run()
             {
-                try
-                {
-                    Method getCleanerMethod = buffer.getClass().getMethod("cleaner", new Class[0]);
-                    getCleanerMethod.setAccessible(true);
-                    sun.misc.Cleaner cleaner = (sun.misc.Cleaner)getCleanerMethod.invoke(buffer,new Object[0]);
-                    cleaner.clean();
-                }
-                catch(Throwable e)
-                {
-                    logger_.debug( LogUtil.throwableToString(e) );
-                }
+                Method getCleanerMethod = buffer.getClass().getMethod("cleaner", new Class[0]);
+                getCleanerMethod.setAccessible(true);
+                sun.misc.Cleaner cleaner = (sun.misc.Cleaner)getCleanerMethod.invoke(buffer,new Object[0]);
+                cleaner.clean();
                 return null;
             }
                 });
