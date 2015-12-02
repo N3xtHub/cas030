@@ -7,8 +7,6 @@
 
 public class DebuggableThreadPoolExecutor extends ThreadPoolExecutor implements DebuggableThreadPoolExecutorMBean
 {
-    private static Logger logger_ = Logger.getLogger(DebuggableThreadPoolExecutor.class);
-
     private ObjectName objName;
     public DebuggableThreadPoolExecutor(String threadPoolName) 
     {

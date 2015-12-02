@@ -730,9 +730,6 @@ public class ContinuationsExecutor extends AbstractExecutorService
                     {
                         t.interrupt();
                     }
-                    catch (SecurityException ignore)
-                    {
-                    }
                     finally
                     {
                         w.unlock();

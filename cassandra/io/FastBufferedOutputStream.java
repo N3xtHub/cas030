@@ -46,10 +46,7 @@ public class FastBufferedOutputStream extends FilterOutputStream
     public FastBufferedOutputStream(OutputStream out, int size)
     {
         super(out);
-        if (size <= 0)
-        {
-            throw new IllegalArgumentException("Buffer size <= 0");
-        }
+
         buf = new byte[size];
     }
     

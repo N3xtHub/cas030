@@ -41,15 +41,15 @@ public class MultiThreadedStage implements IStage
     
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit)
     {
-        throw new UnsupportedOperationException("This operation is not supported");
+        throw new UnsupportedOperationException();
     }
     
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        throw new UnsupportedOperationException("This operation is not supported");
+        throw new UnsupportedOperationException();
     }
     
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException("This operation is not supported");
+        throw new UnsupportedOperationException();
     }
     
     public void shutdown() {  

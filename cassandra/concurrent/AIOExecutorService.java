@@ -196,7 +196,7 @@ public class AIOExecutorService implements ExecutorService
      *         scheduled for execution
      */
 
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) 
     {
         return executorService_.invokeAll(tasks);
     }
@@ -228,7 +228,7 @@ public class AIOExecutorService implements ExecutorService
      * @throws RejectedExecutionException if any task cannot be scheduled
      *         for execution
      */
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException
+    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) 
     {
         return executorService_.invokeAll(tasks, timeout, unit);
     }
@@ -251,7 +251,7 @@ public class AIOExecutorService implements ExecutorService
      * @throws RejectedExecutionException if tasks cannot be scheduled
      *         for execution
      */
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException
+    public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
     {
         return executorService_.invokeAny(tasks);
     }

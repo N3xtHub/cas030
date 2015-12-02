@@ -106,19 +106,8 @@ public class AnalyticsContext implements IComponentShutdown
 
 		if (periodStr != null)
 		{
-			int period = 0;
-			try
-			{
-				period = Integer.parseInt(periodStr);
-			}
-			catch (NumberFormatException nfe)
-			{
-			}
+			int period = Integer.parseInt(periodStr);
 
-			if (period <= 0)
-			{
-				throw new AnalyticsException("Invalid period: " + periodStr);
-			}
 
 			setPeriod(period);
 		}
@@ -154,7 +143,7 @@ public class AnalyticsContext implements IComponentShutdown
 	 * @param value
 	 * @throws IOException
 	 */
-	private void emitMetric(String name, String type, String value) throws IOException
+	private void emitMetric(String name, String type, String value)
 	{
 		String units = getUnits(name);
 		int slope = getSlope(name);
@@ -181,10 +170,6 @@ public class AnalyticsContext implements IComponentShutdown
 	private String getUnits(String metricName)
 	{
 		String result = (String) unitsTable_.get(metricName);
-		if (result == null)
-		{
-			result = DEFAULT_UNITS;
-		}
 
 		return result;
 	}
@@ -216,14 +201,7 @@ public class AnalyticsContext implements IComponentShutdown
 	private int getDmax(String metricName)
 	{
 		String dmaxString = (String) dmaxTable_.get(metricName);
-		if (dmaxString == null)
-		{
-			return DEFAULT_DMAX;
-		}
-		else
-		{
-			return Integer.parseInt(dmaxString);
-		}
+		return Integer.parseInt(dmaxString);
 	}
 
 	/**

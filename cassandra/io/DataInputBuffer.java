@@ -20,16 +20,7 @@ public final class DataInputBuffer extends DataInputStream
             this.mark = start;
             this.pos = start;
         }
-        
-        public int getPosition()
-        {
-            return pos;
-        }
-        
-        public void setPosition(int position)
-        {
-            pos = position;
-        }        
+         
 
         public int getLength()
         {
