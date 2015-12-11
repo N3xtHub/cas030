@@ -31,23 +31,10 @@ public class SingleThreadedContinuationStage implements IStage
         return executorService_.submit(callable);
     }
     
+    // UnsupportedOperationException();
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit)
-    {
-        //return executorService_.schedule(command, delay, unit);
-        throw new UnsupportedOperationException("This operation is not supported");
-    }
-    
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit)
-    {
-        //return executorService_.scheduleAtFixedRate(command, initialDelay, period, unit);
-        throw new UnsupportedOperationException("This operation is not supported");
-    }
-    
     public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit)
-    {
-        //return executorService_.scheduleWithFixedDelay(command, initialDelay, delay, unit);
-        throw new UnsupportedOperationException("This operation is not supported");
-    }
     
     public void shutdown()
     {
@@ -62,6 +49,5 @@ public class SingleThreadedContinuationStage implements IStage
     public long getPendingTasks(){
         return (executorService_.getTaskCount() - executorService_.getCompletedTaskCount());
     }
-    /* Finished implementing the IStage interface methods */
 }
 

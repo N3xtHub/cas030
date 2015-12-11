@@ -30,18 +30,10 @@ public class ContinuationStage implements IStage
         executorService_.execute(runnable);
     }
     
+    //UnsupportedOperationException("");
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit)
-    {
-        throw new UnsupportedOperationException("This operation is not supported");
-    }
-    
-    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit) {
-        throw new UnsupportedOperationException("This operation is not supported");
-    }
-    
-    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit) {
-        throw new UnsupportedOperationException("This operation is not supported");
-    }
+    public ScheduledFuture<?> scheduleAtFixedRate(Runnable command, long initialDelay, long period, TimeUnit unit)
+    public ScheduledFuture<?> scheduleWithFixedDelay(Runnable command, long initialDelay, long delay, TimeUnit unit)
     
     public void shutdown() {  
         executorService_.shutdownNow(); 

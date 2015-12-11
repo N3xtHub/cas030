@@ -8,16 +8,9 @@
 
 public interface IStage 
 {
-    /**
-     * Get the name of the associated stage.
-     * @return name of the associated stage.
-     */
+    //Get the name of the associated stage.
     public String getName();
     
-    /**
-     * Get the thread pool used by this stage 
-     * internally.
-     */
     public ExecutorService getInternalThreadPool();
     
     /**
@@ -82,11 +75,6 @@ public interface IStage
      * implementation detail.
      */
     public void shutdown();  
-    
-    /**
-     * Checks if the stage has been shutdown.
-     * @return true if shut down, otherwise false.
-     */
     public boolean isShutdown();
     
     /**

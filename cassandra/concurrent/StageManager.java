@@ -1,7 +1,7 @@
 
 /**
  * This class manages all stages that exist within a process. The application registers
- * and de-registers stages with this abstraction. Any component that has the <i>ID</i> 
+ * and de-registers stages with this abstraction. Any component that has the ID
  * associated with a stage can obtain a handle to actual stage.
  */
 
@@ -9,11 +9,6 @@ public class StageManager
 {
     private static Map<String, IStage > stageQueues_ = new HashMap<String, IStage>();
     
-    /**
-     * Register a stage with the StageManager
-     * @param stageName stage name.
-     * @param stage stage for the respective message types.
-     */
     public static void registerStage(String stageName, IStage stage)
     {
         stageQueues_.put(stageName, stage);
@@ -33,10 +28,6 @@ public class StageManager
         return stage;
     }
 
-    /**
-     * Retrieve a stage from the StageManager
-     * @param stageName name of the stage to be retrieved.
-    */
     public static IStage getStage(String stageName)
     {
         return stageQueues_.get(stageName);
@@ -50,8 +41,6 @@ public class StageManager
     public static ExecutorService getStageInternalThreadPool(String stageName)
     {
         IStage stage = getStage(stageName);
-        if ( stage == null )
-            throw new IllegalArgumentException("No stage registered with name " + stageName);
         return stage.getInternalThreadPool();
     }
 
