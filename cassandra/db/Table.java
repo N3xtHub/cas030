@@ -10,11 +10,6 @@ public class Table
     {
         /* Name of the column family */
         public final static String cfName_ = "TableMetadata";
-        private static ICompactSerializer<TableMetadata> serializer_;
-        static
-        {
-            serializer_ = new TableMetadataSerializer();
-        }
         
         private static TableMetadata tableMetadata_;
         /* Use the following writer/reader to write/read to Metadata table */
@@ -35,10 +30,6 @@ public class Table
             return tableMetadata_;
         }
 
-        static ICompactSerializer<TableMetadata> serializer()
-        {
-            return serializer_;
-        }
         
         private static void load() throws IOException
         {            

@@ -271,7 +271,7 @@ public class CassandraServer implements Cassandra.Iface
             
             return fileData.toString();
         }
-        else if (propertyName.equals("version"))
+        else if (propertyName == "version")
         {
             return "0.3.0";
         }

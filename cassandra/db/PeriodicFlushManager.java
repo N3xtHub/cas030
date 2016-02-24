@@ -4,7 +4,6 @@
  */
 class PeriodicFlushManager implements IComponentShutdown
 {
-    private static Logger logger_ = Logger.getLogger(PeriodicFlushManager.class);
     private static PeriodicFlushManager instance_;
     private static Lock lock_ = new ReentrantLock();
     private ScheduledExecutorService flusher_ = new DebuggableScheduledThreadPoolExecutor(1, new ThreadFactoryImpl("PERIODIC-FLUSHER-POOL"));
@@ -13,16 +12,7 @@ class PeriodicFlushManager implements IComponentShutdown
     {
         if ( instance_ == null )
         {
-            lock_.lock();
-            try
-            {
-                if ( instance_ == null )
-                    instance_ = new PeriodicFlushManager();
-            }
-            finally
-            {
-                lock_.unlock();
-            }
+            instance_ = new PeriodicFlushManager();
         }
         return instance_;
     }

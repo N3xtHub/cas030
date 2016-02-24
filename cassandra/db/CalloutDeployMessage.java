@@ -45,18 +45,4 @@ public class CalloutDeployMessage
     }
 }
 
-class CalloutDeployMessageSerializer implements ICompactSerializer<CalloutDeployMessage>
-{
-    public void serialize(CalloutDeployMessage cdMessage, DataOutputStream dos) throws IOException
-    {
-        dos.writeUTF(cdMessage.getCallout());
-        dos.writeUTF(cdMessage.getScript());
-    }
-    
-    public CalloutDeployMessage deserialize(DataInputStream dis) throws IOException
-    {
-        String callout = dis.readUTF();
-        String script = dis.readUTF();
-        return new CalloutDeployMessage(callout, script);
-    }
-}
+

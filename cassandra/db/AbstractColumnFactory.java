@@ -68,8 +68,6 @@ class SuperColumnFactory extends AbstractColumnFactory
 	public IColumn createColumn(String name)
 	{
 		String[] values = SuperColumnFactory.getSuperColumnAndColumn(name);
-        if ( values.length == 0 ||  values.length > 2 )
-            throw new IllegalArgumentException("Super Column " + name + " in invalid format. Must be in <super column name>:<column name> format.");
         IColumn superColumn = new SuperColumn(values[0]);
         if(values.length == 2)
         {

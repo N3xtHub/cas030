@@ -36,7 +36,6 @@ public class Gossiper implements IFailureDetectionEventListener, IEndPointStateC
                     if ( !bVal )
                         doGossipToSeed(message);
 
-                    logger_.trace("Performing status check ...");
                     doStatusCheck();
                 }
             }
@@ -52,7 +51,7 @@ public class Gossiper implements IFailureDetectionEventListener, IEndPointStateC
     final static String GOSSIP_DIGEST_ACK2_VERB = "GA2V";   /* GA2V - abbreviation for GOSSIP-DIGEST-ACK2-VERB */
 
     final static int intervalInMillis_ = 1000;
-    private static Logger logger_ = Logger.getLogger(Gossiper.class);
+
     static Gossiper gossiper_;
 
     public synchronized static Gossiper instance()
@@ -157,25 +156,22 @@ public class Gossiper implements IFailureDetectionEventListener, IEndPointStateC
     public void convict(EndPoint endpoint)
     {
         EndPointState epState = endPointStateMap_.get(endpoint);
-        if ( epState != null )
+        if ( !epState.isAlive() && epState.isAGossiper() )
         {
-            if ( !epState.isAlive() && epState.isAGossiper() )
+            /*
+             * just to be sure - is invoked just to make sure that
+             * it was called atleast once.
+            */
+            if ( liveEndpoints_.contains(endpoint) )
             {
-                /*
-                 * just to be sure - is invoked just to make sure that
-                 * it was called atleast once.
-                */
-                if ( liveEndpoints_.contains(endpoint) )
-                {
-                    logger_.info("EndPoint " + endpoint + " is now dead.");
-                    isAlive(endpoint, epState, false);
+                logger_.info("EndPoint " + endpoint + " is now dead.");
+                isAlive(endpoint, epState, false);
 
-                    /* Notify an endpoint is dead to interested parties. */
-                    EndPointState deltaState = new EndPointState(epState.getHeartBeatState());
-                    doNotifications(endpoint, deltaState);
-                }
-                epState.isAGossiper(false);
+                /* Notify an endpoint is dead to interested parties. */
+                EndPointState deltaState = new EndPointState(epState.getHeartBeatState());
+                doNotifications(endpoint, deltaState);
             }
+            epState.isAGossiper(false);
         }
     }
 
@@ -890,26 +886,16 @@ public class Gossiper implements IFailureDetectionEventListener, IEndPointStateC
 
 class JoinVerbHandler implements IVerbHandler
 {
-    private static Logger logger_ = Logger.getLogger( JoinVerbHandler.class);
-
     public void doVerb(Message message)
     {
         EndPoint from = message.getFrom();
-        logger_.debug("Received a JoinMessage from " + from);
-
+   
         byte[] bytes = message.getMessageBody();
         DataInputStream dis = new DataInputStream( new ByteArrayInputStream(bytes) );
 
-        JoinMessage joinMessage = null;
-        try
-        {
-            joinMessage = JoinMessage.serializer().deserialize(dis);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-        if ( joinMessage.clusterId_.equals( DatabaseDescriptor.getClusterName() ) )
+        JoinMessage joinMessage = JoinMessage.serializer().deserialize(dis);
+
+        if ( joinMessage.clusterId_ == DatabaseDescriptor.getClusterName() )
         {
             Gossiper.instance().join(from);
         }
@@ -918,8 +904,6 @@ class JoinVerbHandler implements IVerbHandler
 
 class GossipDigestSynVerbHandler implements IVerbHandler
 {
-    private static Logger logger_ = Logger.getLogger( GossipDigestSynVerbHandler.class);
-
     public void doVerb(Message message)
     {
         EndPoint from = message.getFrom();
@@ -930,7 +914,7 @@ class GossipDigestSynVerbHandler implements IVerbHandler
 
         GossipDigestSynMessage gDigestMessage = GossipDigestSynMessage.serializer().deserialize(dis);
         /* If the message is from a different cluster throw it away. */
-        if ( !gDigestMessage.clusterId_.equals(DatabaseDescriptor.getClusterName()) )
+        if ( gDigestMessage.clusterId_ != DatabaseDescriptor.getClusterName())
             return;
 
         List<GossipDigest> gDigestList = gDigestMessage.getGossipDigests();
@@ -1005,41 +989,37 @@ class GossipDigestAckVerbHandler implements IVerbHandler
         byte[] bytes = message.getMessageBody();
         DataInputStream dis = new DataInputStream( new ByteArrayInputStream(bytes) );
 
-        try
+        GossipDigestAckMessage gDigestAckMessage = GossipDigestAckMessage.serializer().deserialize(dis);
+        List<GossipDigest> gDigestList = gDigestAckMessage.getGossipDigestList();
+        Map<EndPoint, EndPointState> epStateMap = gDigestAckMessage.getEndPointStateMap();
+
+        if ( epStateMap.size() > 0 )
         {
-            GossipDigestAckMessage gDigestAckMessage = GossipDigestAckMessage.serializer().deserialize(dis);
-            List<GossipDigest> gDigestList = gDigestAckMessage.getGossipDigestList();
-            Map<EndPoint, EndPointState> epStateMap = gDigestAckMessage.getEndPointStateMap();
-
-            if ( epStateMap.size() > 0 )
-            {
-                /* Notify the Failure Detector */
-                Gossiper.instance().notifyFailureDetector(epStateMap);
-                Gossiper.instance().applyStateLocally(epStateMap);
-            }
-
-            /* Get the state required to send to this gossipee - construct GossipDigestAck2Message */
-            Map<EndPoint, EndPointState> deltaEpStateMap = new HashMap<EndPoint, EndPointState>();
-            for( GossipDigest gDigest : gDigestList )
-            {
-                EndPoint addr = gDigest.getEndPoint();
-                EndPointState localEpStatePtr = Gossiper.instance().getStateForVersionBiggerThan(addr, gDigest.getMaxVersion());
-                if ( localEpStatePtr != null )
-                    deltaEpStateMap.put(addr, localEpStatePtr);
-            }
-
-            GossipDigestAck2Message gDigestAck2 = new GossipDigestAck2Message(deltaEpStateMap);
-            Message gDigestAck2Message = Gossiper.instance().makeGossipDigestAck2Message(gDigestAck2);
-            logger_.trace("Sending a GossipDigestAck2Message to " + from);
-            MessagingService.getMessagingInstance().sendUdpOneWay(gDigestAck2Message, from);
+            /* Notify the Failure Detector */
+            Gossiper.instance().notifyFailureDetector(epStateMap);
+            Gossiper.instance().applyStateLocally(epStateMap);
         }
+
+        /* Get the state required to send to this gossipee - construct GossipDigestAck2Message */
+        Map<EndPoint, EndPointState> deltaEpStateMap = new HashMap<EndPoint, EndPointState>();
+        for( GossipDigest gDigest : gDigestList )
+        {
+            EndPoint addr = gDigest.getEndPoint();
+            EndPointState localEpStatePtr = Gossiper.instance().getStateForVersionBiggerThan(addr, gDigest.getMaxVersion());
+            if ( localEpStatePtr != null )
+                deltaEpStateMap.put(addr, localEpStatePtr);
+        }
+
+        GossipDigestAck2Message gDigestAck2 = new GossipDigestAck2Message(deltaEpStateMap);
+        Message gDigestAck2Message = Gossiper.instance().makeGossipDigestAck2Message(gDigestAck2);
+        logger_.trace("Sending a GossipDigestAck2Message to " + from);
+        MessagingService.getMessagingInstance().sendUdpOneWay(gDigestAck2Message, from);
+        
     }
 }
 
 class GossipDigestAck2VerbHandler implements IVerbHandler
 {
-    private static Logger logger_ = Logger.getLogger(GossipDigestAck2VerbHandler.class);
-
     public void doVerb(Message message)
     {
         EndPoint from = message.getFrom();
@@ -1047,15 +1027,8 @@ class GossipDigestAck2VerbHandler implements IVerbHandler
 
         byte[] bytes = message.getMessageBody();
         DataInputStream dis = new DataInputStream( new ByteArrayInputStream(bytes) );
-        GossipDigestAck2Message gDigestAck2Message = null;
-        try
-        {
-            gDigestAck2Message = GossipDigestAck2Message.serializer().deserialize(dis);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
+        GossipDigestAck2Message gDigestAck2Message = GossipDigestAck2Message.serializer().deserialize(dis);
+
         Map<EndPoint, EndPointState> remoteEpStateMap = gDigestAck2Message.getEndPointStateMap();
         /* Notify the Failure Detector */
         Gossiper.instance().notifyFailureDetector(remoteEpStateMap);

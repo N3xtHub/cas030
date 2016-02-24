@@ -1,18 +1,7 @@
 
 public class RowMutation implements Serializable
-{
-    private static ICompactSerializer<RowMutation> serializer_;
+
     public static final String HINT = "HINT";
-
-    static
-    {
-        serializer_ = new RowMutationSerializer();
-    }   
-
-    static ICompactSerializer<RowMutation> serializer()
-    {
-        return serializer_;
-    }
 
     private String table_;
     private String key_;

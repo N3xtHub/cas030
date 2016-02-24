@@ -1,14 +1,6 @@
 
 public class Row
 {
-    private static RowSerializer serializer_ = new RowSerializer();
-    private static Logger logger_ = Logger.getLogger(Row.class);
-
-    static RowSerializer serializer()
-    {
-        return serializer_;
-    }
-
     private String key_;
 
     private Map<String, ColumnFamily> columnFamilies_ = new Hashtable<String, ColumnFamily>();
@@ -158,39 +150,3 @@ public class Row
     }
 }
 
-class RowSerializer implements ICompactSerializer<Row>
-{
-    public void serialize(Row row, DataOutputStream dos) throws IOException
-    {
-        dos.writeUTF(row.key());
-        Map<String, ColumnFamily> columnFamilies = row.getColumnFamilyMap();
-        int size = columnFamilies.size();
-        dos.writeInt(size);
-
-        if (size > 0)
-        {
-            Set<String> cNames = columnFamilies.keySet();
-            for (String cName : cNames)
-            {
-                ColumnFamily.serializer().serialize(columnFamilies.get(cName), dos);
-            }
-        }
-    }
-
-    public Row deserialize(DataInputStream dis) throws IOException
-    {
-        String key = dis.readUTF();
-        Row row = new Row(key);
-        int size = dis.readInt();
-
-        if (size > 0)
-        {
-            for (int i = 0; i < size; ++i)
-            {
-                ColumnFamily cf = ColumnFamily.serializer().deserialize(dis);
-                row.addColumnFamily(cf);
-            }
-        }
-        return row;
-    }
-}

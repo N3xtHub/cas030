@@ -12,18 +12,7 @@ public class CalloutManager
     {
         if ( instance_ == null )
         {
-            CalloutManager.createLock_.lock();
-            try
-            {
-                if ( instance_ == null )
-                {
-                    instance_ = new CalloutManager();
-                }
-            }
-            finally
-            {
-                CalloutManager.createLock_.unlock();
-            }
+            instance_ = new CalloutManager();
         }
         return instance_;
     }
@@ -83,14 +72,7 @@ public class CalloutManager
             fis.read(bytes);
             fis.close();
             /* cache the callout after compiling it */
-            try
-            {
-                compileAndCache(callout, new String(bytes));                    
-            }
-            catch ( ScriptException ex )
-            {
-                logger_.warn(LogUtil.throwableToString(ex));
-            }
+            compileAndCache(callout, new String(bytes));                    
         }
     }
     
@@ -104,14 +86,8 @@ public class CalloutManager
     {
         /* cache the script */
         /* cache the callout after compiling it */
-        try
-        {
-            compileAndCache(callout, script);                    
-        }
-        catch ( ScriptException ex )
-        {
-            logger_.warn(LogUtil.throwableToString(ex));
-        }
+        compileAndCache(callout, script);                    
+
         /* save the script to disk */
         String scriptFile = DatabaseDescriptor.getCalloutLocation() + System.getProperty("file.separator") + callout + extn_;
         File file = new File(scriptFile);
@@ -150,16 +126,9 @@ public class CalloutManager
         CompiledScript script = calloutCache_.get(callout);
         if ( script != null )
         {
-            try
-            {
-                Bindings binding = new SimpleBindings();
-                binding.put("args", args);
-                result = script.eval(binding);
-            }
-            catch(ScriptException ex)
-            {
-                logger_.warn(LogUtil.throwableToString(ex));
-            }
+            Bindings binding = new SimpleBindings();
+            binding.put("args", args);
+            result = script.eval(binding);
         }
         return result;
     }

@@ -278,10 +278,7 @@ public class ContinuationsExecutor extends AbstractExecutorService
     {
         /* post process the call if need be */ 
         IContinuable run = ContinuationsExecutor.tls_.get();
-        if ( run != null )
-        {              
-            run.run(c);                        
-        }
+        run.run(c);                        
         ContinuationsExecutor.tls_.remove();
     }
     
@@ -612,28 +609,20 @@ public class ContinuationsExecutor extends AbstractExecutorService
                 return;
             }
 
-            final ReentrantLock mainLock = this.mainLock;
-            mainLock.lock();
-            try
+            if (ctl.compareAndSet(c, ctlOf(TIDYING, 0)))
             {
-                if (ctl.compareAndSet(c, ctlOf(TIDYING, 0)))
+                try
                 {
-                    try
-                    {
-                        terminated();
-                    }
-                    finally
-                    {
-                        ctl.set(ctlOf(TERMINATED, 0));
-                        termination.signalAll();
-                    }
-                    return;
+                    terminated();
                 }
+                finally
+                {
+                    ctl.set(ctlOf(TERMINATED, 0));
+                    termination.signalAll();
+                }
+                return;
             }
-            finally
-            {
-                mainLock.unlock();
-            }
+
             // else retry on failed CAS
         }
     }
@@ -652,21 +641,9 @@ public class ContinuationsExecutor extends AbstractExecutorService
     private void checkShutdownAccess()
     {
         SecurityManager security = System.getSecurityManager();
-        if (security != null)
-        {
-            security.checkPermission(shutdownPerm);
-            final ReentrantLock mainLock = this.mainLock;
-            mainLock.lock();
-            try
-            {
-                for (Worker w : workers)
-                    security.checkAccess(w.thread);
-            }
-            finally
-            {
-                mainLock.unlock();
-            }
-        }
+        security.checkPermission(shutdownPerm);
+        for (Worker w : workers)
+            security.checkAccess(w.thread);
     }
 
     /**
@@ -675,25 +652,11 @@ public class ContinuationsExecutor extends AbstractExecutorService
      */
     private void interruptWorkers()
     {
-        final ReentrantLock mainLock = this.mainLock;
-        mainLock.lock();
-        try
+        for (Worker w : workers)
         {
-            for (Worker w : workers)
-            {
-                try
-                {
-                    w.thread.interrupt();
-                }
-                catch (SecurityException ignore)
-                {
-                }
-            }
+            w.thread.interrupt();
         }
-        finally
-        {
-            mainLock.unlock();
-        }
+
     }
 
     /**
@@ -717,31 +680,15 @@ public class ContinuationsExecutor extends AbstractExecutorService
      */
     private void interruptIdleWorkers(boolean onlyOne)
     {
-        final ReentrantLock mainLock = this.mainLock;
-        mainLock.lock();
-        try
+        for (Worker w : workers)
         {
-            for (Worker w : workers)
+            Thread t = w.thread;
+            if (!t.isInterrupted() && w.tryLock())
             {
-                Thread t = w.thread;
-                if (!t.isInterrupted() && w.tryLock())
-                {
-                    try
-                    {
-                        t.interrupt();
-                    }
-                    finally
-                    {
-                        w.unlock();
-                    }
-                }
-                if (onlyOne)
-                    break;
+                t.interrupt();
             }
-        }
-        finally
-        {
-            mainLock.unlock();
+            if (onlyOne)
+                break;
         }
     }
 
@@ -886,34 +833,25 @@ public class ContinuationsExecutor extends AbstractExecutorService
         Worker w = new Worker(firstTask);
         Thread t = w.thread;
 
-        final ReentrantLock mainLock = this.mainLock;
-        mainLock.lock();
-        try
+        // Recheck while holding lock.
+        // Back out on ThreadFactory failure or if
+        // shut down before lock acquired.
+        int c = ctl.get();
+        int rs = runStateOf(c);
+
+        if (t == null
+                || (rs >= SHUTDOWN && !(rs == SHUTDOWN && firstTask == null)))
         {
-            // Recheck while holding lock.
-            // Back out on ThreadFactory failure or if
-            // shut down before lock acquired.
-            int c = ctl.get();
-            int rs = runStateOf(c);
-
-            if (t == null
-                    || (rs >= SHUTDOWN && !(rs == SHUTDOWN && firstTask == null)))
-            {
-                decrementWorkerCount();
-                tryTerminate();
-                return false;
-            }
-
-            workers.add(w);
-
-            int s = workers.size();
-            if (s > largestPoolSize)
-                largestPoolSize = s;
+            decrementWorkerCount();
+            tryTerminate();
+            return false;
         }
-        finally
-        {
-            mainLock.unlock();
-        }
+
+        workers.add(w);
+
+        int s = workers.size();
+        if (s > largestPoolSize)
+            largestPoolSize = s;
 
         t.start();
         // It is possible (but unlikely) for a thread to have been
@@ -946,17 +884,9 @@ public class ContinuationsExecutor extends AbstractExecutorService
         if (completedAbruptly) // If abrupt, then workerCount wasn't adjusted
             decrementWorkerCount();
 
-        final ReentrantLock mainLock = this.mainLock;
-        mainLock.lock();
-        try
-        {
-            completedTaskCount += w.completedTasks;
-            workers.remove(w);
-        }
-        finally
-        {
-            mainLock.unlock();
-        }
+        completedTaskCount += w.completedTasks;
+        workers.remove(w);
+
 
         tryTerminate();
 
@@ -1099,21 +1029,6 @@ public class ContinuationsExecutor extends AbstractExecutorService
                         c = Continuation.continueWith(c, new ContinuationContext(c));
                         /* post process the call if need be */                        
                         ContinuationsExecutor.doPostProcessing(c);
-                    }
-                    catch (RuntimeException x)
-                    {
-                        thrown = x;
-                        throw x;
-                    }
-                    catch (Error x)
-                    {
-                        thrown = x;
-                        throw x;
-                    }
-                    catch (Throwable x)
-                    {
-                        thrown = x;
-                        throw new Error(x);
                     }
                     finally
                     {
@@ -1370,22 +1285,7 @@ public class ContinuationsExecutor extends AbstractExecutorService
      */
     public void shutdown()
     { 
-        /*
-        final ReentrantLock mainLock = this.mainLock;
-        mainLock.lock();
-        try
-        {
-            checkShutdownAccess();
-            advanceRunState(SHUTDOWN);
-            interruptIdleWorkers();
-            onShutdown(); // hook for ScheduledThreadPoolExecutor
-        }
-        finally
-        {
-            mainLock.unlock();
-        }
-        tryTerminate(); 
-        */           
+          
     }
 
     /**

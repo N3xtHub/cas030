@@ -7,13 +7,6 @@
  */
 public class WriteResponse 
 {
-    private static WriteResponseSerializer serializer_ = new WriteResponseSerializer();
-
-    public static WriteResponseSerializer serializer()
-    {
-        return serializer_;
-    }
-
     public static Message makeWriteResponseMessage(Message original, WriteResponse writeResponseMessage) throws IOException
     {
     	ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -32,36 +25,9 @@ public class WriteResponse
 		status_ = bVal;
 	}
 
-	public String table()
-	{
-		return table_;
-	}
-
-	public String key()
-	{
-		return key_;
-	}
-
 	public boolean isSuccess()
 	{
 		return status_;
 	}
 
-    public static class WriteResponseSerializer implements ICompactSerializer<WriteResponse>
-    {
-        public void serialize(WriteResponse wm, DataOutputStream dos) throws IOException
-        {
-            dos.writeUTF(wm.table());
-            dos.writeUTF(wm.key());
-            dos.writeBoolean(wm.isSuccess());
-        }
-
-        public WriteResponse deserialize(DataInputStream dis) throws IOException
-        {
-            String table = dis.readUTF();
-            String key = dis.readUTF();
-            boolean status = dis.readBoolean();
-            return new WriteResponse(table, key, status);
-        }
-    }
 }

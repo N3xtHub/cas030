@@ -79,13 +79,10 @@ public class MultiQuorumResponseHandler implements IAsyncCallback
     
     public Row[] get()
     {
-        lock_.lock()
-        {            
-            boolean bVal = true;            
-            if ( !done_.get() )
-            {                   
-                bVal = condition_.await(DatabaseDescriptor.getRpcTimeout());
-            }
+        boolean bVal = true;            
+        if ( !done_.get() )
+        {                   
+            bVal = condition_.await(DatabaseDescriptor.getRpcTimeout());
         }
         
         return responses_.toArray( new Row[0] );

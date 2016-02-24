@@ -3,22 +3,12 @@ public class BinaryMemtableManager
 {
     private static BinaryMemtableManager instance_;
     private static Lock lock_ = new ReentrantLock();
-    private static Logger logger_ = Logger.getLogger(BinaryMemtableManager.class);    
 
     static BinaryMemtableManager instance() 
     {
         if ( instance_ == null )
         {
-            lock_.lock();
-            try
-            {
-                if ( instance_ == null )
-                    instance_ = new BinaryMemtableManager();
-            }
-            finally
-            {
-                lock_.unlock();
-            }
+            instance_ = new BinaryMemtableManager();
         }
         return instance_;
     }
@@ -34,14 +24,7 @@ public class BinaryMemtableManager
         
         public void run()
         {
-            try
-            {
-            	memtable_.flush();
-            }
-            catch (IOException e)
-            {
-                logger_.debug( LogUtil.throwableToString(e) );
-            }        	
+            memtable_.flush();
         }
     }
     

@@ -104,13 +104,8 @@ public class AnalyticsContext implements IComponentShutdown
 	{
 		String periodStr = getAttribute(PERIOD_PROPERTY);
 
-		if (periodStr != null)
-		{
-			int period = Integer.parseInt(periodStr);
-
-
-			setPeriod(period);
-		}
+		int period = Integer.parseInt(periodStr);
+		setPeriod(period);
 
 		metricsServers_ = parse(serverSpecList, port_);
 		unitsTable_ = getAttributeTable(UNITS_PROPERTY);

@@ -985,8 +985,7 @@ public final class StorageService implements IEndPointStateChangeSubscriber, Sto
 				}
 			}
 			
-			if ( moveOn )
-				continue;
+			if ( moveOn ) continue;
 			
 			// We have tried to be really nice but looks like theer are no servers 
 			// in the local data center that are alive and can service this request so 
